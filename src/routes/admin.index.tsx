@@ -73,7 +73,7 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="week" />
                 <YAxis />
-                <Tooltip formatter={(v: number) => formatBRL(v)} />
+                <Tooltip formatter={(v) => formatBRL(Number(v))} />
                 <Bar dataKey="receita" fill="oklch(0.6 0.14 10)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

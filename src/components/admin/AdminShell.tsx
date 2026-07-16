@@ -4,14 +4,15 @@ import type { ReactNode } from "react";
 import { logout } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const nav = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const nav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
   { to: "/admin/clientes", label: "Clientes", icon: Users },
   { to: "/admin/ia", label: "IA Assistant", icon: Sparkles },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
-] as const;
+];
 
 export function AdminShell({ children, title }: { children: ReactNode; title: string }) {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
             return (
               <Link
                 key={n.to}
-                to={n.to}
+                to={n.to as string}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
                   active ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",

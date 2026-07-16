@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -59,86 +45,141 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-rose: var(--rose);
+  --color-rose-deep: var(--rose-deep);
+  --color-leaf: var(--leaf);
+  --color-coffee: var(--coffee);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.75rem;
+  --rose: oklch(0.78 0.09 5);
+  --rose-deep: oklch(0.6 0.14 10);
+  --leaf: oklch(0.72 0.08 145);
+  --coffee: oklch(0.38 0.07 55);
+  --cream: oklch(0.98 0.015 80);
+  --ink: oklch(0.22 0.03 25);
+
+  --background: oklch(0.985 0.012 75);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: var(--ink);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --popover-foreground: var(--ink);
+  --primary: var(--rose-deep);
+  --primary-foreground: oklch(0.99 0.005 80);
+  --secondary: oklch(0.94 0.03 15);
+  --secondary-foreground: var(--rose-deep);
+  --muted: oklch(0.95 0.015 60);
+  --muted-foreground: oklch(0.5 0.02 30);
+  --accent: oklch(0.92 0.05 145);
+  --accent-foreground: var(--coffee);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --destructive-foreground: oklch(0.99 0.005 80);
+  --border: oklch(0.9 0.02 30);
+  --input: oklch(0.92 0.02 30);
+  --ring: var(--rose);
+  --chart-1: oklch(0.78 0.09 5);
+  --chart-2: oklch(0.72 0.08 145);
+  --chart-3: oklch(0.6 0.14 10);
+  --chart-4: oklch(0.65 0.12 65);
+  --chart-5: oklch(0.38 0.07 55);
+
+  --sidebar: oklch(0.2 0.02 25);
+  --sidebar-foreground: oklch(0.95 0.01 60);
+  --sidebar-primary: var(--rose);
+  --sidebar-primary-foreground: oklch(0.15 0.02 25);
+  --sidebar-accent: oklch(0.26 0.03 25);
+  --sidebar-accent-foreground: oklch(0.98 0.01 60);
+  --sidebar-border: oklch(0.3 0.02 25);
+  --sidebar-ring: var(--rose);
+
+  --gradient-hero: linear-gradient(135deg, oklch(0.2 0.03 25 / 0.55), oklch(0.6 0.14 10 / 0.45));
+  --gradient-soft: linear-gradient(180deg, oklch(0.98 0.02 20), oklch(0.985 0.012 75));
+  --gradient-petal: linear-gradient(135deg, oklch(0.85 0.07 5), oklch(0.75 0.11 10));
+  --gradient-rose: linear-gradient(135deg, oklch(0.78 0.09 5), oklch(0.6 0.14 10));
+  --shadow-elegant: 0 20px 50px -20px oklch(0.6 0.14 10 / 0.35);
+  --shadow-card: 0 8px 24px -12px oklch(0.4 0.05 25 / 0.15);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.18 0.02 25);
+  --foreground: oklch(0.97 0.01 60);
+  --card: oklch(0.22 0.02 25);
+  --card-foreground: oklch(0.97 0.01 60);
+  --popover: oklch(0.22 0.02 25);
+  --popover-foreground: oklch(0.97 0.01 60);
+  --primary: var(--rose);
+  --primary-foreground: oklch(0.15 0.02 25);
+  --secondary: oklch(0.28 0.03 25);
+  --secondary-foreground: oklch(0.97 0.01 60);
+  --muted: oklch(0.26 0.02 25);
+  --muted-foreground: oklch(0.72 0.02 30);
+  --accent: oklch(0.3 0.05 145);
+  --accent-foreground: oklch(0.97 0.01 60);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --ring: var(--rose);
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .bg-gradient-hero { background-image: var(--gradient-hero); }
+  .bg-gradient-soft { background-image: var(--gradient-soft); }
+  .bg-gradient-petal { background-image: var(--gradient-petal); }
+  .bg-gradient-rose { background-image: var(--gradient-rose); }
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-card-soft { box-shadow: var(--shadow-card); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s ease-out, transform 0.9s ease-out;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-fade-1 { animation: fadeUp 0.9s 0.1s both; }
+.hero-fade-2 { animation: fadeUp 0.9s 0.4s both; }
+.hero-fade-3 { animation: fadeUp 0.9s 0.7s both; }
+
+@keyframes petalFall {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translate3d(40px, 110vh, 0) rotate(360deg); opacity: 0; }
+}
+.petal {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 60% 40% 60% 40% / 60% 40% 60% 40%;
+  background: var(--gradient-petal);
+  opacity: 0.85;
+  pointer-events: none;
+  animation: petalFall linear infinite;
 }

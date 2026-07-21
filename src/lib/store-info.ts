@@ -3,9 +3,9 @@ export const store = {
   tagline: "Flores, café e presentes únicos para cada ocasião especial",
   address: "Av. Pres. Kennedy, 260 - Padre Antonio, Maravilha - SC, 89874-000",
   phone: "(49) 99810-5239",
-  phoneDigits: "5549998105239",
-  whatsapp: "(47) 99107-2410",
-  whatsappDigits: "5547991072410",
+  phoneDigits: "554998105239",
+  whatsapp: "(49) 99810-5239",
+  whatsappDigits: "554998105239",
   instagram: "brunacafecomflores",
   hours: [
     { day: "Segunda a Sexta", time: "08:00 – 11:30 · 13:00 – 18:15" },

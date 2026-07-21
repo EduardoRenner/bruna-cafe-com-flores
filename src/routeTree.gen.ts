@@ -21,6 +21,7 @@ import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminIaRouteImport } from './routes/admin.ia'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as ApiPublicProdutosRouteImport } from './routes/api/public/produtos'
 
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
@@ -82,6 +83,11 @@ const AdminClientesRoute = AdminClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicProdutosRoute = ApiPublicProdutosRouteImport.update({
+  id: '/api/public/produtos',
+  path: '/api/public/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/api/chat'
     | '/admin/'
+    | '/api/public/produtos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/api/chat'
     | '/admin'
+    | '/api/public/produtos'
   id:
     | '__root__'
     | '/'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/api/chat'
     | '/admin/'
+    | '/api/public/produtos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   SobreRoute: typeof SobreRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/produtos': {
+      id: '/api/public/produtos'
+      path: '/api/public/produtos'
+      fullPath: '/api/public/produtos'
+      preLoaderRoute: typeof ApiPublicProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -294,6 +314,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   SobreRoute: SobreRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicProdutosRoute: ApiPublicProdutosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

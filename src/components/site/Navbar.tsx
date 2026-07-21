@@ -53,7 +53,7 @@ export function Navbar() {
             </Link>
           ))}
           <Button asChild size="sm" className="bg-rose-deep text-primary-foreground hover:bg-rose-deep/90">
-            <a href="https://wa.me/5547991072410" target="_blank" rel="noreferrer">WhatsApp</a>
+            <a href="https://wa.me/554998105239" target="_blank" rel="noreferrer">WhatsApp</a>
           </Button>
         </nav>
         <Sheet>
@@ -71,7 +71,7 @@ export function Navbar() {
                 </Link>
               ))}
               <Button asChild className="mt-4 bg-rose-deep text-primary-foreground">
-                <a href="https://wa.me/5547991072410" target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
+                <a href="https://wa.me/554998105239" target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
               </Button>
             </div>
           </SheetContent>

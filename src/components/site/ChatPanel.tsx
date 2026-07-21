@@ -11,7 +11,7 @@ export interface ChatMessage {
 
 const INITIAL: ChatMessage = {
   role: "assistant",
-  content: "Olá! 🌸 Sou a assistente virtual da Bruna Café com Flores. Como posso te ajudar a encontrar o presente perfeito hoje?",
+  content: "oi! tudo bem? 🌸 me conta, é pra alguma ocasião especial ou tá dando uma olhadinha?",
 };
 
 export function ChatPanel({ variant = "light" }: { variant?: "light" | "dark" }) {

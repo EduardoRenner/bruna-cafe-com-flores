@@ -9,8 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Power } from "lucide-react";
+import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import { categories, formatBRL, loadProducts, saveProducts, type Category, type Product } from "@/lib/products";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ function emptyProduct(): Product {
 function ProdutosAdmin() {
   const [list, setList] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState<Product | null>(null);
 
   useEffect(() => { setList(loadProducts()); }, []);
 
@@ -37,6 +39,17 @@ function ProdutosAdmin() {
   }
   function toggle(p: Product) {
     persist(list.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)));
+  }
+
+  function remove(p: Product) {
+    try {
+      persist(list.filter((x) => x.id !== p.id));
+      toast.success(`Produto "${p.name}" excluído`);
+      setDeleting(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível excluir o produto. Tente novamente.");
+    }
   }
 
   return (
@@ -79,6 +92,7 @@ function ProdutosAdmin() {
                   <td className="p-4 text-right">
                     <Button variant="ghost" size="sm" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => toggle(p)}><Power className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                   </td>
                 </tr>
               ))}
@@ -131,6 +145,26 @@ function ProdutosAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o produto <strong>{deleting?.name}</strong>? Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleting && remove(deleting)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminShell>
   );
 }

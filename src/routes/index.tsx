@@ -16,8 +16,8 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Bruna Café com Flores — Floricultura e Café em Maravilha SC" },
       { name: "description", content: "Transformamos momentos em memórias. Flores frescas, café da manhã na porta e presentes personalizados em Maravilha, SC." },
-      { property: "og:title", content: "Bruna Café com Flores" },
-      { property: "og:description", content: "Flores, café e presentes únicos para cada ocasião especial." },
+      { property: "og:title", content: "Bruna Café com Flores — Floricultura e Café em Maravilha SC" },
+      { property: "og:description", content: "Transformamos momentos em memórias. Flores frescas, café da manhã na porta e presentes personalizados em Maravilha, SC." },
     ],
   }),
   component: Home,

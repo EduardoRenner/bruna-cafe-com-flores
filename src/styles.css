@@ -51,7 +51,7 @@
   --color-coffee: var(--coffee);
   --color-cream: var(--cream);
   --color-ink: var(--ink);
-  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-display: "Fraunces", "Playfair Display", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 

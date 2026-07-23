@@ -40,7 +40,7 @@ function Home() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative flex min-h-[92vh] items-center justify-center overflow-hidden">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-24">
         <img
           src={heroImg}
           alt="Fachada da Bruna Café com Flores com flores rosas e brancas"
@@ -50,12 +50,12 @@ function Home() {
         />
         <div className="absolute inset-0 bg-gradient-hero" />
         <Petals count={12} />
-        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center text-primary-foreground">
-          <p className="hero-fade-1 mb-4 text-sm uppercase tracking-[0.3em] text-primary-foreground/90">Maravilha · SC</p>
-          <h1 className="hero-fade-1 text-balance font-display text-5xl leading-tight sm:text-6xl md:text-7xl">
+        <div className="relative z-10 mx-auto max-w-5xl px-6 text-center text-primary-foreground">
+          <p className="hero-fade-1 mb-5 text-sm uppercase tracking-[0.35em] text-primary-foreground/90 sm:text-base">Maravilha · SC</p>
+          <h1 className="hero-fade-1 text-balance font-display text-6xl leading-[1.05] sm:text-7xl md:text-8xl">
             Transformamos <em className="italic text-rose">momentos</em> em memórias
           </h1>
-          <p className="hero-fade-2 mx-auto mt-6 max-w-2xl text-lg text-primary-foreground/90">
+          <p className="hero-fade-2 mx-auto mt-8 max-w-2xl text-lg text-primary-foreground/90 md:text-xl">
             {store.tagline}
           </p>
           <div className="hero-fade-3 mt-10 flex flex-wrap justify-center gap-3">

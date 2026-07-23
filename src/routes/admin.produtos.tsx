@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,51 +13,130 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Power, Trash2 } from "lucide-react";
-import { categories, formatBRL, loadProducts, saveProducts, type Category, type Product } from "@/lib/products";
+import { Plus, Pencil, Power, Trash2, Upload } from "lucide-react";
+import { categories, formatBRL, type Category } from "@/lib/products";
+import { getPassword } from "@/lib/auth";
+import {
+  adminListProducts,
+  adminUpsertProduct,
+  adminDeleteProduct,
+  adminUploadProductImage,
+} from "@/lib/admin.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/produtos")({ component: ProdutosAdmin });
 
-function emptyProduct(): Product {
-  return { id: `p${Date.now()}`, name: "", description: "", price: 0, category: "Flores", image: "", active: true };
+type AdminProduct = {
+  id?: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string;
+  image_url: string | null;
+  active: boolean;
+};
+
+function emptyProduct(): AdminProduct {
+  return { name: "", description: "", price: 0, category: "Flores", image_url: "", active: true };
 }
 
 function ProdutosAdmin() {
-  const [list, setList] = useState<Product[]>([]);
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [deleting, setDeleting] = useState<Product | null>(null);
+  const qc = useQueryClient();
+  const password = getPassword();
+  const listFn = useServerFn(adminListProducts);
+  const upsertFn = useServerFn(adminUpsertProduct);
+  const deleteFn = useServerFn(adminDeleteProduct);
+  const uploadFn = useServerFn(adminUploadProductImage);
 
-  useEffect(() => { setList(loadProducts()); }, []);
+  const [editing, setEditing] = useState<AdminProduct | null>(null);
+  const [deleting, setDeleting] = useState<AdminProduct | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  function persist(next: Product[]) { setList(next); saveProducts(next); }
+  const { data: list = [], isLoading } = useQuery({
+    queryKey: ["admin-products"],
+    queryFn: () => listFn({ data: { password } }) as Promise<AdminProduct[]>,
+  });
 
-  function save(p: Product) {
-    const idx = list.findIndex((x) => x.id === p.id);
-    const next = idx >= 0 ? list.map((x) => (x.id === p.id ? p : x)) : [p, ...list];
-    persist(next);
-    toast.success(idx >= 0 ? "Produto atualizado" : "Produto criado");
-    setEditing(null);
+  function refresh() {
+    qc.invalidateQueries({ queryKey: ["admin-products"] });
+    qc.invalidateQueries({ queryKey: ["products"] });
   }
-  function toggle(p: Product) {
-    persist(list.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)));
-  }
 
-  function remove(p: Product) {
+  async function save(p: AdminProduct) {
     try {
-      persist(list.filter((x) => x.id !== p.id));
+      await upsertFn({
+        data: {
+          password,
+          product: {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            price: Number(p.price),
+            category: p.category,
+            image_url: p.image_url,
+            active: p.active,
+          },
+        },
+      });
+      toast.success(p.id ? "Produto atualizado" : "Produto criado");
+      setEditing(null);
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar produto");
+    }
+  }
+
+  async function toggle(p: AdminProduct) {
+    try {
+      await upsertFn({ data: { password, product: { ...p, active: !p.active } } });
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar");
+    }
+  }
+
+  async function remove(p: AdminProduct) {
+    try {
+      if (p.id) await deleteFn({ data: { password, id: p.id } });
       toast.success(`Produto "${p.name}" excluído`);
       setDeleting(null);
+      refresh();
     } catch (err) {
-      console.error(err);
-      toast.error("Não foi possível excluir o produto. Tente novamente.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o produto.");
+    }
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !editing) return;
+    setUploading(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadFn({
+        data: { password, fileName: file.name, contentType: file.type, base64 },
+      });
+      setEditing({ ...editing, image_url: res.url });
+      toast.success("Imagem enviada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload da imagem");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
   return (
     <AdminShell title="Produtos">
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{list.length} produtos cadastrados</p>
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? "Carregando…" : `${list.length} produtos cadastrados`}
+        </p>
         <Button onClick={() => setEditing(emptyProduct())} className="bg-rose-deep text-primary-foreground">
           <Plus className="mr-2 h-4 w-4" /> Adicionar produto
         </Button>
@@ -77,7 +158,7 @@ function ProdutosAdmin() {
                 <tr key={p.id} className="border-b border-border/50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      {p.image ? <img src={p.image} alt="" className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-muted" />}
+                      {p.image_url ? <img src={p.image_url} alt="" className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-muted" />}
                       <div>
                         <div className="font-medium">{p.name}</div>
                         <div className="line-clamp-1 text-xs text-muted-foreground">{p.description}</div>
@@ -85,7 +166,7 @@ function ProdutosAdmin() {
                     </div>
                   </td>
                   <td className="p-4 text-muted-foreground">{p.category}</td>
-                  <td className="p-4 text-right">{formatBRL(p.price)}</td>
+                  <td className="p-4 text-right">{formatBRL(Number(p.price))}</td>
                   <td className="p-4">
                     <Badge variant={p.active ? "default" : "secondary"}>{p.active ? "Ativo" : "Inativo"}</Badge>
                   </td>
@@ -96,6 +177,9 @@ function ProdutosAdmin() {
                   </td>
                 </tr>
               ))}
+              {!isLoading && list.length === 0 && (
+                <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum produto cadastrado ainda.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -103,7 +187,7 @@ function ProdutosAdmin() {
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing?.name ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing?.id ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-3">
               <div>
@@ -112,7 +196,7 @@ function ProdutosAdmin() {
               </div>
               <div>
                 <Label>Descrição</Label>
-                <Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="mt-1" />
+                <Textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="mt-1" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -130,8 +214,15 @@ function ProdutosAdmin() {
                 </div>
               </div>
               <div>
-                <Label>Foto (URL)</Label>
-                <Input value={editing.image} onChange={(e) => setEditing({ ...editing, image: e.target.value })} className="mt-1" placeholder="https://..." />
+                <Label>Foto</Label>
+                <div className="mt-1 flex items-center gap-2">
+                  <Input value={editing.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder="https://... ou envie um arquivo" />
+                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickFile} />
+                  <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Enviando…" : "Enviar"}
+                  </Button>
+                </div>
+                {editing.image_url && <img src={editing.image_url} alt="" className="mt-2 h-24 w-24 rounded-md object-cover" />}
               </div>
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <Label htmlFor="active">Produto ativo</Label>

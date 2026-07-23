@@ -15,6 +15,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { ChatWidget } from "@/components/site/ChatWidget";
+import { CartProvider } from "@/lib/cart";
+import { CartSheet } from "@/components/site/CartSheet";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -107,14 +109,15 @@ function RootComponent() {
       {isAdmin ? (
         <Outlet />
       ) : (
-        <>
+        <CartProvider>
           <Navbar />
           <main className="min-h-screen">
             <Outlet />
           </main>
           <Footer />
           <ChatWidget />
-        </>
+          <CartSheet />
+        </CartProvider>
       )}
       <Toaster />
     </QueryClientProvider>

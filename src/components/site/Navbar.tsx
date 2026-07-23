@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, Flower2 } from "lucide-react";
+import { Menu, Flower2, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -15,6 +16,7 @@ const links = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { count, setOpen } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -52,13 +54,38 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Abrir carrinho"
+            className={cn("relative rounded-md p-2 transition-colors hover:text-rose-deep", onHero ? "text-primary-foreground" : "text-foreground")}
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-deep px-1 text-[10px] font-semibold text-primary-foreground">
+                {count}
+              </span>
+            )}
+          </button>
           <Button asChild size="sm" className="bg-rose-deep text-primary-foreground hover:bg-rose-deep/90">
             <a href="https://wa.me/554998105239" target="_blank" rel="noreferrer">WhatsApp</a>
           </Button>
         </nav>
+        <div className="flex items-center gap-1 md:hidden">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Abrir carrinho"
+            className={cn("relative rounded-md p-2", onHero ? "text-primary-foreground" : "text-foreground")}
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-deep px-1 text-[10px] font-semibold text-primary-foreground">
+                {count}
+              </span>
+            )}
+          </button>
         <Sheet>
           <SheetTrigger asChild>
-            <button className={cn("rounded-md p-2 md:hidden", onHero ? "text-primary-foreground" : "text-foreground")} aria-label="Abrir menu">
+            <button className={cn("rounded-md p-2", onHero ? "text-primary-foreground" : "text-foreground")} aria-label="Abrir menu">
               <Menu className="h-5 w-5" />
             </button>
           </SheetTrigger>
@@ -76,6 +103,7 @@ export function Navbar() {
             </div>
           </SheetContent>
         </Sheet>
+        </div>
       </div>
     </header>
   );

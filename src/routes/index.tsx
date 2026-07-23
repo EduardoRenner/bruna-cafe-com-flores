@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flower2, Coffee, Gift, Star, Instagram, ArrowRight, MessageCircle } from "lucide-react";
+import { Flower2, Coffee, Gift, Star, Instagram, ArrowRight, MessageCircle, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import heroImg from "@/assets/hero-storefront.jpg";
@@ -7,8 +9,9 @@ import cafeImg from "@/assets/cafe-exterior.jpg";
 import bouquetImg from "@/assets/bouquet.jpg";
 import breakfastImg from "@/assets/breakfast-box.jpg";
 import { Petals } from "@/components/site/Petals";
-import { initialProducts, formatBRL } from "@/lib/products";
+import { fetchActiveProducts, formatBRL } from "@/lib/products";
 import { store, whatsappLink } from "@/lib/store-info";
+import { useCart } from "@/lib/cart";
 import { useReveal } from "@/lib/use-reveal";
 
 export const Route = createFileRoute("/")({
@@ -23,8 +26,6 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const featured = initialProducts.slice(0, 6);
-
 const testimonials = [
   { name: "Camila R.", text: "Excelente trabalho e ótimas flores! A proprietária é muito prestativa e atenciosa.", stars: 5 },
   { name: "Rafael M.", text: "Pedi um box café da manhã de surpresa e superou todas as expectativas. Recomendo demais.", stars: 5 },
@@ -33,6 +34,9 @@ const testimonials = [
 
 function Home() {
   useReveal();
+  const { add, setOpen } = useCart();
+  const { data: products } = useQuery({ queryKey: ["products"], queryFn: fetchActiveProducts });
+  const featured = (products ?? []).slice(0, 6);
   return (
     <div>
       {/* HERO */}
@@ -102,17 +106,29 @@ function Home() {
           </div>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
-              <Card key={p.id} className="reveal group overflow-hidden border-none shadow-card-soft transition-all hover:-translate-y-1 hover:shadow-elegant">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <Card key={p.id} className="group overflow-hidden border-none shadow-card-soft transition-all hover:-translate-y-1 hover:shadow-elegant">
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-muted-foreground">Sem foto</div>
+                  )}
                 </div>
                 <div className="p-5">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground">{p.category}</p>
                   <h3 className="mt-1 font-display text-xl">{p.name}</h3>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-display text-2xl text-rose-deep">{formatBRL(p.price)}</span>
-                    <Button asChild size="sm" className="bg-rose-deep text-primary-foreground">
-                      <a href={whatsappLink(`Olá! Tenho interesse no produto ${p.name} — ${formatBRL(p.price)}. Podem me ajudar?`)} target="_blank" rel="noreferrer">Pedir</a>
+                    <Button
+                      size="sm"
+                      className="bg-rose-deep text-primary-foreground"
+                      onClick={() => {
+                        add({ id: p.id, name: p.name, price: p.price, image: p.image || null });
+                        toast.success("Adicionado ao carrinho", { description: p.name });
+                        setOpen(true);
+                      }}
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar
                     </Button>
                   </div>
                 </div>

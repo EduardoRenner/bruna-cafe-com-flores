@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 import { formatBRL } from "@/lib/products";
 import { getPassword } from "@/lib/auth";
-import { adminListOrders, adminUpdateOrderStatus } from "@/lib/admin.functions";
+import { adminListOrders, adminUpdateOrderStatus, adminDeleteOrder } from "@/lib/admin.functions";
 import { STATUS_LABELS, type OrderRow, type OrderStatus } from "@/lib/orders";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -38,9 +40,11 @@ function PedidosAdmin() {
   const password = getPassword();
   const listFn = useServerFn(adminListOrders);
   const statusFn = useServerFn(adminUpdateOrderStatus);
+  const deleteFn = useServerFn(adminDeleteOrder);
 
   const [f, setF] = useState<OrderStatus | "Todos">("Todos");
   const [sel, setSel] = useState<OrderRow | null>(null);
+  const [deleting, setDeleting] = useState<OrderRow | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
@@ -57,6 +61,18 @@ function PedidosAdmin() {
       setSel((prev) => (prev && prev.id === o.id ? { ...prev, status } : prev));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao atualizar status");
+    }
+  }
+
+  async function removeOrder(o: OrderRow) {
+    try {
+      await deleteFn({ data: { password, id: o.id } });
+      toast.success(`Pedido ${o.order_number} excluído`);
+      setDeleting(null);
+      setSel(null);
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir pedido");
     }
   }
 
@@ -146,10 +162,40 @@ function PedidosAdmin() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="border-t border-border pt-4">
+                <Button
+                  variant="outline"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setDeleting(sel)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir pedido
+                </Button>
+              </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir pedido</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pedido <strong>{deleting?.order_number}</strong> de{" "}
+              <strong>{deleting?.customer_name}</strong>? Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleting && removeOrder(deleting)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminShell>
   );
 }

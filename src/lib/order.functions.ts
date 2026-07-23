@@ -35,6 +35,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .insert({
+        order_number: "", // gerado pelo trigger no banco
         customer_name: data.customer_name.trim().slice(0, 200),
         customer_phone: data.customer_phone.trim().slice(0, 40),
         customer_email: data.customer_email?.trim().slice(0, 200) || null,

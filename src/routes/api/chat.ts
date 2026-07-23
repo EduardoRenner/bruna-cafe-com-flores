@@ -19,6 +19,43 @@ export const Route = createFileRoute("/api/chat")({
             return new Response(JSON.stringify({ error: "Sem mensagens." }), { status: 400 });
           }
 
+          // Limites para evitar abuso do gateway de IA (custo/DoS).
+          const MAX_MESSAGES = 40;
+          const MAX_MSG_CHARS = 2000;
+          const MAX_TOTAL_CHARS = 20000;
+          if (messages.length > MAX_MESSAGES) {
+            return new Response(
+              JSON.stringify({ error: "Conversa muito longa. Recomece o chat." }),
+              { status: 413, headers: { "content-type": "application/json" } },
+            );
+          }
+          let total = 0;
+          for (const m of messages) {
+            if (
+              !m ||
+              (m.role !== "user" && m.role !== "assistant") ||
+              typeof m.content !== "string"
+            ) {
+              return new Response(
+                JSON.stringify({ error: "Mensagem inválida." }),
+                { status: 400, headers: { "content-type": "application/json" } },
+              );
+            }
+            if (m.content.length > MAX_MSG_CHARS) {
+              return new Response(
+                JSON.stringify({ error: "Mensagem muito longa." }),
+                { status: 413, headers: { "content-type": "application/json" } },
+              );
+            }
+            total += m.content.length;
+          }
+          if (total > MAX_TOTAL_CHARS) {
+            return new Response(
+              JSON.stringify({ error: "Conversa muito longa. Recomece o chat." }),
+              { status: 413, headers: { "content-type": "application/json" } },
+            );
+          }
+
           const key = process.env.LOVABLE_API_KEY;
           if (!key) {
             return new Response(JSON.stringify({ error: "Chave da IA não configurada." }), { status: 500 });

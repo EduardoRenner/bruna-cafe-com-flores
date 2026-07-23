@@ -1,21 +1,52 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Flower2, Lock } from "lucide-react";
-import { isAuthed, setSession } from "@/lib/auth";
+import { getPassword, isAuthed, logout, setSession } from "@/lib/auth";
 import { adminLogin } from "@/lib/admin.functions";
 
 export function LoginGate({ children }: { children: ReactNode }) {
-  const [authed, setAuthed] = useState(() => isAuthed());
+  // Começa não-autenticado até o servidor confirmar a senha guardada. Isso
+  // impede o bypass onde alguém seta o flag em sessionStorage pelo devtools.
+  const [authed, setAuthed] = useState(false);
+  const [verifying, setVerifying] = useState(() => isAuthed() && getPassword().length > 0);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const loginFn = useServerFn(adminLogin);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!verifying) return;
+    (async () => {
+      try {
+        await loginFn({ data: { password: getPassword() } });
+        if (!cancelled) setAuthed(true);
+      } catch {
+        if (!cancelled) {
+          logout();
+          setAuthed(false);
+        }
+      } finally {
+        if (!cancelled) setVerifying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifying, loginFn]);
+
   if (authed) return <>{children}</>;
+  if (verifying) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-sidebar p-6 text-sidebar-foreground/70">
+        Verificando sessão…
+      </div>
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

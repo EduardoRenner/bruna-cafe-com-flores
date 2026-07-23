@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
@@ -31,6 +33,11 @@ const SobreRoute = SobreRouteImport.update({
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogoRoute = CatalogoRouteImport.update({
@@ -52,6 +59,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const PedidoOrderNumberRoute = PedidoOrderNumberRouteImport.update({
+  id: '/pedido/$orderNumber',
+  path: '/pedido/$orderNumber',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
@@ -93,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -101,12 +114,14 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
+  '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -115,6 +130,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
+  '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
@@ -123,6 +139,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -131,6 +148,7 @@ export interface FileRoutesById {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/api/chat': typeof ApiChatRoute
+  '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
 }
@@ -140,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/catalogo'
+    | '/checkout'
     | '/contato'
     | '/sobre'
     | '/admin/clientes'
@@ -148,12 +167,14 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/chat'
+    | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/catalogo'
+    | '/checkout'
     | '/contato'
     | '/sobre'
     | '/admin/clientes'
@@ -162,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/chat'
+    | '/pedido/$orderNumber'
     | '/admin'
     | '/api/public/produtos'
   id:
@@ -169,6 +191,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/catalogo'
+    | '/checkout'
     | '/contato'
     | '/sobre'
     | '/admin/clientes'
@@ -177,6 +200,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/chat'
+    | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
   fileRoutesById: FileRoutesById
@@ -185,9 +209,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   CatalogoRoute: typeof CatalogoRoute
+  CheckoutRoute: typeof CheckoutRoute
   ContatoRoute: typeof ContatoRoute
   SobreRoute: typeof SobreRoute
   ApiChatRoute: typeof ApiChatRoute
+  PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
   ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
 }
 
@@ -205,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/contato'
       fullPath: '/contato'
       preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo': {
@@ -234,6 +267,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/pedido/$orderNumber': {
+      id: '/pedido/$orderNumber'
+      path: '/pedido/$orderNumber'
+      fullPath: '/pedido/$orderNumber'
+      preLoaderRoute: typeof PedidoOrderNumberRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
       id: '/api/chat'
@@ -311,9 +351,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   CatalogoRoute: CatalogoRoute,
+  CheckoutRoute: CheckoutRoute,
   ContatoRoute: ContatoRoute,
   SobreRoute: SobreRoute,
   ApiChatRoute: ApiChatRoute,
+  PedidoOrderNumberRoute: PedidoOrderNumberRoute,
   ApiPublicProdutosRoute: ApiPublicProdutosRoute,
 }
 export const routeTree = rootRouteImport

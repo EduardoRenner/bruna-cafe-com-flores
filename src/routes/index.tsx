@@ -9,7 +9,6 @@ import cafeImg from "@/assets/cafe-exterior.jpg";
 import bouquetImg from "@/assets/bouquet.jpg";
 import breakfastImg from "@/assets/breakfast-box.jpg";
 import { Petals } from "@/components/site/Petals";
-import { Awning } from "@/components/site/Awning";
 import { Flourish } from "@/components/site/Flourish";
 import { fetchActiveProducts, formatBRL } from "@/lib/products";
 import { store, whatsappLink } from "@/lib/store-info";
@@ -40,7 +39,7 @@ function Home() {
   const { data: products } = useQuery({ queryKey: ["products"], queryFn: fetchActiveProducts });
   const featured = (products ?? []).slice(0, 6);
   return (
-    <div className="striped-bg">
+    <div>
       {/* HERO */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-24">
         <img
@@ -73,11 +72,12 @@ function Home() {
         </div>
       </section>
 
-      {/* Toldo listrado — "entrada" da loja */}
-      <Awning className="-mt-px" />
+      {/* CONTEÚDO SOBRE FUNDO LISTRADO (cards em cima do listrado) */}
+      <div className="striped-bg px-3 py-6 sm:px-5 sm:py-8 md:px-8 md:py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 md:gap-8">
 
       {/* O QUE OFERECEMOS */}
-      <section className="mx-auto my-10 max-w-7xl rounded-3xl bg-background px-6 pb-20 pt-14 shadow-card-soft md:px-10">
+      <section className="rounded-3xl bg-background px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
           <h2 className="mt-3 font-display text-4xl md:text-5xl">Três universos, uma experiência</h2>
@@ -99,8 +99,8 @@ function Home() {
       </section>
 
       {/* DESTAQUES */}
-      <section className="bg-gradient-soft py-24">
-        <div className="mx-auto max-w-7xl px-6 md:px-8">
+      <section className="overflow-hidden rounded-3xl bg-gradient-soft px-6 py-14 shadow-card-soft md:px-10 md:py-16">
+        <div>
           <div className="reveal flex items-end justify-between gap-6">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Destaque do mês</p>
@@ -146,7 +146,7 @@ function Home() {
       </section>
 
       {/* NOSSA HISTÓRIA */}
-      <section className="relative mx-auto my-10 grid max-w-7xl gap-14 overflow-hidden rounded-3xl bg-background px-6 py-20 shadow-card-soft md:grid-cols-2 md:px-10">
+      <section className="relative grid gap-14 overflow-hidden rounded-3xl bg-background px-6 py-14 shadow-card-soft md:grid-cols-2 md:px-10 md:py-16">
         <Flourish className="pointer-events-none absolute -right-6 top-6 h-24 w-72 rotate-6 text-coffee/15" />
         <Flourish className="pointer-events-none absolute -left-8 bottom-4 h-20 w-64 -rotate-6 text-rose-deep/10" />
         <div className="reveal overflow-hidden rounded-3xl shadow-elegant">
@@ -171,12 +171,9 @@ function Home() {
         </div>
       </section>
 
-      {/* Toldo listrado — divisória de seção */}
-      <Awning className="-mb-px" />
-
       {/* DEPOIMENTOS */}
-      <section className="bg-secondary pb-24 pt-16">
-        <div className="mx-auto max-w-7xl px-6 md:px-8">
+      <section className="overflow-hidden rounded-3xl bg-secondary px-6 py-14 shadow-card-soft md:px-10 md:py-16">
+        <div>
           <div className="reveal text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Depoimentos</p>
             <h2 className="mt-3 font-display text-4xl md:text-5xl">O que dizem sobre a gente</h2>
@@ -197,7 +194,7 @@ function Home() {
       </section>
 
       {/* INSTAGRAM */}
-      <section className="mx-auto my-10 max-w-7xl rounded-3xl bg-background px-6 py-20 shadow-card-soft md:px-10">
+      <section className="rounded-3xl bg-background px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Instagram</p>
@@ -219,11 +216,11 @@ function Home() {
       </section>
 
       {/* CTA FINAL */}
-      <section className="relative overflow-hidden bg-gradient-rose py-24 text-primary-foreground">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-rose px-6 py-16 text-primary-foreground shadow-card-soft md:py-20">
         <Petals count={8} />
         <Flourish className="pointer-events-none absolute -left-6 top-8 h-20 w-64 -rotate-6 text-cream/20" />
         <Flourish className="pointer-events-none absolute -right-6 bottom-8 h-20 w-64 rotate-6 text-cream/20" />
-        <div className="reveal relative z-10 mx-auto max-w-3xl px-6 text-center">
+        <div className="reveal relative z-10 mx-auto max-w-3xl text-center">
           <h2 className="font-display text-4xl md:text-5xl">Pronta para surpreender alguém especial?</h2>
           <Flourish className="mx-auto mt-5 h-8 w-52 text-cream/80 flourish-sway" />
           <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/90">
@@ -236,6 +233,8 @@ function Home() {
           </Button>
         </div>
       </section>
+        </div>
+      </div>
     </div>
   );
 }

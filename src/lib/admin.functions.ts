@@ -68,6 +68,21 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const adminUpdatePaymentStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string; id: string; payment_status: string }) => data)
+  .handler(async ({ data }) => {
+    const admin = await verifyAdmin(data.password);
+    if (!["pendente", "pago", "estornado"].includes(data.payment_status)) {
+      throw new Error("Status de pagamento inválido");
+    }
+    const { error } = await admin
+      .from("orders")
+      .update({ payment_status: data.payment_status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
 export const adminDeleteOrder = createServerFn({ method: "POST" })
   .inputValidator((data: { password: string; id: string }) => data)
   .handler(async ({ data }) => {

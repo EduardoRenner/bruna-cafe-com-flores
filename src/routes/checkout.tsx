@@ -40,6 +40,11 @@ function CheckoutPage() {
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [zoneId, setZoneId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<"asap" | "schedule">("asap");
+  const [scheduleDate, setScheduleDate] = useState<string>("");
+  const [schedulePeriod, setSchedulePeriod] = useState<string>("Manhã");
+
+  const todayISO = new Date().toISOString().slice(0, 10);
 
   const selectedZone = useMemo(() => zones?.find((z) => z.id === zoneId) ?? null, [zones, zoneId]);
   const deliveryFee = deliveryType === "delivery" ? selectedZone?.fee ?? 0 : 0;
@@ -96,8 +101,22 @@ function CheckoutPage() {
 
     const cep = String(fd.get("cep") ?? "").trim();
     const complemento = String(fd.get("complemento") ?? "").trim();
-    const dateRaw = String(fd.get("date") ?? "").trim();
-    const timeRaw = String(fd.get("time") ?? "").trim();
+    const dateRaw = scheduleMode === "schedule" ? scheduleDate : "";
+    const timeRaw = scheduleMode === "schedule" ? schedulePeriod : "";
+
+    if (scheduleMode === "schedule") {
+      if (!dateRaw) {
+        toast.error("Escolha a data de entrega agendada.");
+        setSubmitting(false);
+        return;
+      }
+      if (dateRaw < todayISO) {
+        toast.error("A data agendada não pode ser no passado.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
     const notes = String(fd.get("notes") ?? "").trim();
     const paymentLabel = String(fd.get("payment") ?? "Pix");
     const paymentDb = PAYMENT_DB[paymentLabel] ?? "pix";
@@ -307,15 +326,71 @@ function CheckoutPage() {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Data desejada</Label>
-                  <Input type="date" name="date" />
-                </div>
-                <div>
-                  <Label>Horário</Label>
-                  <Input type="time" name="time" />
-                </div>
+              <div className="mt-6">
+                <Label className="mb-2 block">Quando você precisa?</Label>
+                <RadioGroup
+                  value={scheduleMode}
+                  onValueChange={(v) => setScheduleMode(v as "asap" | "schedule")}
+                  className="grid gap-3 md:grid-cols-2"
+                >
+                  <label
+                    className={
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-4 " +
+                      (scheduleMode === "asap" ? "border-rose-deep bg-rose-deep/5" : "border-border")
+                    }
+                  >
+                    <RadioGroupItem value="asap" className="mt-1" />
+                    <div>
+                      <div className="font-medium">O quanto antes</div>
+                      <div className="text-sm text-muted-foreground">Preparamos e enviamos assim que possível</div>
+                    </div>
+                  </label>
+                  <label
+                    className={
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-4 " +
+                      (scheduleMode === "schedule" ? "border-rose-deep bg-rose-deep/5" : "border-border")
+                    }
+                  >
+                    <RadioGroupItem value="schedule" className="mt-1" />
+                    <div>
+                      <div className="font-medium">Agendar</div>
+                      <div className="text-sm text-muted-foreground">Escolha data e horário</div>
+                    </div>
+                  </label>
+                </RadioGroup>
+
+                {scheduleMode === "schedule" && (
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>Data *</Label>
+                      <Input
+                        type="date"
+                        min={todayISO}
+                        value={scheduleDate}
+                        onChange={(e) => setScheduleDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Horário / Período *</Label>
+                      <Select value={schedulePeriod} onValueChange={setSchedulePeriod}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Manhã">Manhã (08h – 12h)</SelectItem>
+                          <SelectItem value="Tarde">Tarde (13h – 18h)</SelectItem>
+                          <SelectItem value="08:00">08:00</SelectItem>
+                          <SelectItem value="09:00">09:00</SelectItem>
+                          <SelectItem value="10:00">10:00</SelectItem>
+                          <SelectItem value="11:00">11:00</SelectItem>
+                          <SelectItem value="14:00">14:00</SelectItem>
+                          <SelectItem value="15:00">15:00</SelectItem>
+                          <SelectItem value="16:00">16:00</SelectItem>
+                          <SelectItem value="17:00">17:00</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

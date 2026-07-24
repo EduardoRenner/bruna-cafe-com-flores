@@ -77,7 +77,7 @@ function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-6 md:gap-8">
 
       {/* O QUE OFERECEMOS */}
-      <section className="rounded-3xl bg-background px-6 py-14 shadow-card-soft md:px-10 md:py-16">
+      <section className="striped-soft rounded-3xl px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
           <h2 className="mt-3 font-display text-4xl md:text-5xl">Três universos, uma experiência</h2>
@@ -146,7 +146,7 @@ function Home() {
       </section>
 
       {/* NOSSA HISTÓRIA */}
-      <section className="relative grid gap-14 overflow-hidden rounded-3xl bg-background px-6 py-14 shadow-card-soft md:grid-cols-2 md:px-10 md:py-16">
+      <section className="striped-soft relative grid gap-14 overflow-hidden rounded-3xl px-6 py-14 shadow-card-soft md:grid-cols-2 md:px-10 md:py-16">
         <Flourish className="pointer-events-none absolute -right-6 top-6 h-24 w-72 rotate-6 text-coffee/15" />
         <Flourish className="pointer-events-none absolute -left-8 bottom-4 h-20 w-64 -rotate-6 text-rose-deep/10" />
         <div className="reveal overflow-hidden rounded-3xl shadow-elegant">
@@ -194,7 +194,7 @@ function Home() {
       </section>
 
       {/* INSTAGRAM */}
-      <section className="rounded-3xl bg-background px-6 py-14 shadow-card-soft md:px-10 md:py-16">
+      <section className="striped-soft rounded-3xl px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Instagram</p>

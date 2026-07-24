@@ -155,15 +155,26 @@
   .shadow-card-soft { box-shadow: var(--shadow-card); }
 }
 
-/* Fundo com linhas horizontais finas de escalope raso (parece uma linha, não meio-círculo) — só na home */
+/* Fundo com linhas horizontais finas e curvas, mais espaçadas (parece uma linha) — só na home */
 .striped-bg {
   background-color: var(--color-background);
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='22'%3E%3Cpath%20d='M0,6%20Q22,14%2044,6'%20fill='none'%20stroke='%23141210'%20stroke-width='1.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='36'%3E%3Cpath%20d='M0,7%20Q22,23%2044,7'%20fill='none'%20stroke='%23141210'%20stroke-width='2'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 44px 22px;
+  background-size: 44px 36px;
 }
 .dark .striped-bg {
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='22'%3E%3Cpath%20d='M0,6%20Q22,14%2044,6'%20fill='none'%20stroke='%236b645d'%20stroke-width='1.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='36'%3E%3Cpath%20d='M0,7%20Q22,23%2044,7'%20fill='none'%20stroke='%236b645d'%20stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* Versão suave das mesmas linhas — para aparecerem sutilmente atrás do texto dentro dos cards */
+.striped-soft {
+  background-color: var(--color-background);
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='36'%3E%3Cpath%20d='M0,7%20Q22,23%2044,7'%20fill='none'%20stroke='%23e0dacf'%20stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 44px 36px;
+}
+.dark .striped-soft {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='36'%3E%3Cpath%20d='M0,7%20Q22,23%2044,7'%20fill='none'%20stroke='%23332f2b'%20stroke-width='2'/%3E%3C/svg%3E");
 }
 
 .reveal {

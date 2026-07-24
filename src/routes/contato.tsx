@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { store, whatsappLink } from "@/lib/store-info";
 import { Instagram, MapPin, Phone, MessageCircle, Clock } from "lucide-react";
+import { Flourish } from "@/components/site/Flourish";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contato")({
@@ -40,13 +41,15 @@ function Contato() {
       <section className="mx-auto max-w-5xl px-6 py-16 text-center md:px-8">
         <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Contato</p>
         <h1 className="mt-3 font-display text-5xl">Vamos conversar</h1>
+        <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
           Deixe uma mensagem ou fale direto no WhatsApp. Adoramos ajudar você a escolher o presente certo.
         </p>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-6 pb-24 md:grid-cols-[1.2fr_1fr] md:px-8">
-        <Card className="border-none p-8 shadow-card-soft">
+      <div className="mx-auto max-w-7xl px-6 pb-24 md:px-8">
+        <div className="striped-bg grid gap-8 rounded-3xl p-4 sm:p-6 md:grid-cols-[1.2fr_1fr]">
+        <Card className="striped-soft border-none p-8 shadow-card-soft">
           <form onSubmit={submit} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -111,6 +114,7 @@ function Contato() {
             </ul>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );

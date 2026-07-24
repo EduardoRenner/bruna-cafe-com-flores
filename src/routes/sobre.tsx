@@ -6,6 +6,7 @@ import bouquetImg from "@/assets/bouquet.jpg";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Sparkles, Heart, Flower2 } from "lucide-react";
 import { useReveal } from "@/lib/use-reveal";
+import { Flourish } from "@/components/site/Flourish";
 
 export const Route = createFileRoute("/sobre")({
   head: () => ({
@@ -27,6 +28,7 @@ function About() {
       <section className="mx-auto max-w-5xl px-6 py-16 text-center md:px-8">
         <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Sobre</p>
         <h1 className="mt-3 font-display text-5xl md:text-6xl">A Bruna Café com Flores</h1>
+        <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
         <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
           Um espaço criado com carinho pela <strong>Bruna Fernanda Strojake</strong> para transformar o dia das pessoas em algo especial —
           através de flores frescas, café artesanal e presentes pensados nos mínimos detalhes.
@@ -43,13 +45,13 @@ function About() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-8">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="striped-bg grid gap-6 rounded-3xl p-4 sm:p-6 md:grid-cols-3">
           {[
             { icon: Heart, title: "Missão", text: "Entregar afeto em cada arranjo, transformando momentos comuns em memórias afetivas." },
             { icon: Sparkles, title: "Visão", text: "Ser referência em presentes personalizados e experiências florais em Santa Catarina." },
             { icon: Flower2, title: "Diferenciais", text: "Atendimento próximo, montagem à mão e entrega no mesmo dia em Maravilha e região." },
           ].map((v) => (
-            <Card key={v.title} className="reveal border-none bg-card p-8 shadow-card-soft">
+            <Card key={v.title} className="reveal striped-soft border-none p-8 shadow-card-soft">
               <v.icon className="h-8 w-8 text-rose-deep" />
               <h3 className="mt-4 font-display text-2xl">{v.title}</h3>
               <p className="mt-2 text-muted-foreground">{v.text}</p>
@@ -69,6 +71,7 @@ function About() {
         </div>
         <div className="reveal">
           <h2 className="font-display text-3xl">Onde nos encontrar</h2>
+          <Flourish className="mt-4 h-7 w-44 text-rose-deep/80 flourish-sway" />
           <p className="mt-4 flex gap-2 text-muted-foreground"><MapPin className="mt-0.5 h-5 w-5 text-rose-deep" /> {store.address}</p>
           <h3 className="mt-8 font-display text-2xl">Horários</h3>
           <ul className="mt-3 space-y-3">

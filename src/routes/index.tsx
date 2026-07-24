@@ -9,6 +9,8 @@ import cafeImg from "@/assets/cafe-exterior.jpg";
 import bouquetImg from "@/assets/bouquet.jpg";
 import breakfastImg from "@/assets/breakfast-box.jpg";
 import { Petals } from "@/components/site/Petals";
+import { Awning } from "@/components/site/Awning";
+import { Flourish } from "@/components/site/Flourish";
 import { fetchActiveProducts, formatBRL } from "@/lib/products";
 import { store, whatsappLink } from "@/lib/store-info";
 import { useCart } from "@/lib/cart";
@@ -71,11 +73,15 @@ function Home() {
         </div>
       </section>
 
+      {/* Toldo listrado — "entrada" da loja */}
+      <Awning className="-mt-px" />
+
       {/* O QUE OFERECEMOS */}
-      <section className="mx-auto max-w-7xl px-6 py-24 md:px-8">
+      <section className="mx-auto max-w-7xl px-6 pb-24 pt-16 md:px-8">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
           <h2 className="mt-3 font-display text-4xl md:text-5xl">Três universos, uma experiência</h2>
+          <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
         </div>
         <div className="mt-14 grid gap-8 md:grid-cols-3">
           {[
@@ -99,6 +105,7 @@ function Home() {
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Destaque do mês</p>
               <h2 className="mt-3 font-display text-4xl md:text-5xl">Nossos favoritos</h2>
+              <Flourish className="mt-4 h-7 w-44 text-rose-deep/80 flourish-sway" />
             </div>
             <Button asChild variant="ghost" className="hidden md:inline-flex">
               <Link to="/catalogo">Ver tudo <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -139,13 +146,16 @@ function Home() {
       </section>
 
       {/* NOSSA HISTÓRIA */}
-      <section className="mx-auto grid max-w-7xl gap-14 px-6 py-24 md:grid-cols-2 md:px-8">
+      <section className="relative mx-auto grid max-w-7xl gap-14 overflow-hidden px-6 py-24 md:grid-cols-2 md:px-8">
+        <Flourish className="pointer-events-none absolute -right-6 top-6 h-24 w-72 rotate-6 text-coffee/15" />
+        <Flourish className="pointer-events-none absolute -left-8 bottom-4 h-20 w-64 -rotate-6 text-rose-deep/10" />
         <div className="reveal overflow-hidden rounded-3xl shadow-elegant">
           <img src={cafeImg} alt="Fachada lateral com mesa de ferro" loading="lazy" className="h-full w-full object-cover" />
         </div>
         <div className="reveal flex flex-col justify-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Nossa história</p>
           <h2 className="mt-3 font-display text-4xl md:text-5xl">Um cantinho especial em Maravilha</h2>
+          <Flourish className="mt-4 h-7 w-44 text-rose-deep/70 flourish-sway" />
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
             A Bruna Fernanda Strojake criou este espaço com um propósito simples: entregar afeto em forma de flor, café e presente.
             Cada arranjo é pensado à mão para transformar um dia comum em um dia inesquecível.
@@ -161,12 +171,16 @@ function Home() {
         </div>
       </section>
 
+      {/* Toldo listrado — divisória de seção */}
+      <Awning className="-mb-px" />
+
       {/* DEPOIMENTOS */}
-      <section className="bg-secondary/40 py-24">
+      <section className="bg-secondary/40 pb-24 pt-16">
         <div className="mx-auto max-w-7xl px-6 md:px-8">
           <div className="reveal text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Depoimentos</p>
             <h2 className="mt-3 font-display text-4xl md:text-5xl">O que dizem sobre a gente</h2>
+            <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {testimonials.map((t, i) => (
@@ -207,8 +221,11 @@ function Home() {
       {/* CTA FINAL */}
       <section className="relative overflow-hidden bg-gradient-rose py-24 text-primary-foreground">
         <Petals count={8} />
+        <Flourish className="pointer-events-none absolute -left-6 top-8 h-20 w-64 -rotate-6 text-cream/20" />
+        <Flourish className="pointer-events-none absolute -right-6 bottom-8 h-20 w-64 rotate-6 text-cream/20" />
         <div className="reveal relative z-10 mx-auto max-w-3xl px-6 text-center">
           <h2 className="font-display text-4xl md:text-5xl">Pronta para surpreender alguém especial?</h2>
+          <Flourish className="mx-auto mt-5 h-8 w-52 text-cream/80 flourish-sway" />
           <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/90">
             Chame no WhatsApp e monte o presente perfeito com a gente.
           </p>

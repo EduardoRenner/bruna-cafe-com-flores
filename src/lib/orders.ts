@@ -10,6 +10,14 @@ export const STATUS_LABELS: Record<string, string> = {
   cancelado: "Cancelado",
 };
 
+export type PaymentStatus = "pendente" | "pago" | "estornado";
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pendente: "Pagamento pendente",
+  pago: "Pago",
+  estornado: "Estornado",
+};
+
 export type OrderItem = { id?: string; name: string; quantity: number; price: number };
 
 export interface OrderRow {
@@ -25,6 +33,7 @@ export interface OrderRow {
   payment_method: string;
   notes: string | null;
   status: string;
+  payment_status?: string;
   total: number;
   items: OrderItem[] | unknown;
   created_at: string;

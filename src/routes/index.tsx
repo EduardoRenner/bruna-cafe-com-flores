@@ -40,7 +40,7 @@ function Home() {
   const { data: products } = useQuery({ queryKey: ["products"], queryFn: fetchActiveProducts });
   const featured = (products ?? []).slice(0, 6);
   return (
-    <div>
+    <div className="striped-bg">
       {/* HERO */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-24">
         <img
@@ -77,7 +77,7 @@ function Home() {
       <Awning className="-mt-px" />
 
       {/* O QUE OFERECEMOS */}
-      <section className="mx-auto max-w-7xl px-6 pb-24 pt-16 md:px-8">
+      <section className="mx-auto my-10 max-w-7xl rounded-3xl bg-background px-6 pb-20 pt-14 shadow-card-soft md:px-10">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
           <h2 className="mt-3 font-display text-4xl md:text-5xl">Três universos, uma experiência</h2>
@@ -146,7 +146,7 @@ function Home() {
       </section>
 
       {/* NOSSA HISTÓRIA */}
-      <section className="relative mx-auto grid max-w-7xl gap-14 overflow-hidden px-6 py-24 md:grid-cols-2 md:px-8">
+      <section className="relative mx-auto my-10 grid max-w-7xl gap-14 overflow-hidden rounded-3xl bg-background px-6 py-20 shadow-card-soft md:grid-cols-2 md:px-10">
         <Flourish className="pointer-events-none absolute -right-6 top-6 h-24 w-72 rotate-6 text-coffee/15" />
         <Flourish className="pointer-events-none absolute -left-8 bottom-4 h-20 w-64 -rotate-6 text-rose-deep/10" />
         <div className="reveal overflow-hidden rounded-3xl shadow-elegant">
@@ -175,7 +175,7 @@ function Home() {
       <Awning className="-mb-px" />
 
       {/* DEPOIMENTOS */}
-      <section className="bg-secondary/40 pb-24 pt-16">
+      <section className="bg-secondary pb-24 pt-16">
         <div className="mx-auto max-w-7xl px-6 md:px-8">
           <div className="reveal text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Depoimentos</p>
@@ -197,7 +197,7 @@ function Home() {
       </section>
 
       {/* INSTAGRAM */}
-      <section className="mx-auto max-w-7xl px-6 py-24 md:px-8">
+      <section className="mx-auto my-10 max-w-7xl rounded-3xl bg-background px-6 py-20 shadow-card-soft md:px-10">
         <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Instagram</p>

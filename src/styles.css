@@ -63,6 +63,8 @@
   --coffee: oklch(0.38 0.07 55);
   --cream: oklch(0.98 0.015 80);
   --ink: oklch(0.22 0.03 25);
+  /* faixa do fundo listrado (bem sutil, tom creme) */
+  --stripe-bg: oklch(0.966 0.016 78);
 
   --background: oklch(0.985 0.012 75);
   --foreground: var(--ink);
@@ -126,12 +128,19 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: var(--rose);
+  --stripe-bg: oklch(0.215 0.02 25);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
+    /* Fundo listrado sutil — faixas verticais em tom creme, ecoando o toldo */
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0 28px,
+      var(--stripe-bg) 28px 56px
+    );
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

@@ -137,16 +137,18 @@ function PedidosAdmin() {
   return (
     <AdminShell title="Pedidos">
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="-mx-1 flex w-full gap-2 overflow-x-auto px-1 pb-1 md:w-auto md:flex-wrap md:overflow-visible">
         {filters.map((x) => (
           <button
             key={x}
             onClick={() => setF(x)}
-            className={cn("rounded-full border px-4 py-1.5 text-sm transition-colors", f === x ? "border-rose-deep bg-rose-deep text-primary-foreground" : "border-border hover:bg-secondary")}
+            className={cn("shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors", f === x ? "border-rose-deep bg-rose-deep text-primary-foreground" : "border-border hover:bg-secondary")}
           >
             {x === "Todos" ? "Todos" : STATUS_LABELS[x]}
           </button>
         ))}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        </div>
+        <div className="flex w-full flex-wrap items-center gap-2 md:ml-auto md:w-auto">
           <button
             onClick={() => setScheduledOnly((v) => !v)}
             className={cn(
@@ -157,7 +159,7 @@ function PedidosAdmin() {
             <CalendarClock className="h-4 w-4" /> Somente agendados
           </button>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as "created" | "scheduled")}>
-            <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="created">Mais recentes</SelectItem>
               <SelectItem value="scheduled">Data agendada</SelectItem>
@@ -166,7 +168,7 @@ function PedidosAdmin() {
         </div>
       </div>
       <Card className="border-none p-0 shadow-card-soft">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted-foreground">
               <tr>
@@ -207,6 +209,36 @@ function PedidosAdmin() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile: cards */}
+        <div className="divide-y divide-border/50 md:hidden">
+          {list.map((o) => (
+            <button
+              key={o.id}
+              onClick={() => setSel(o)}
+              className="block w-full p-4 text-left hover:bg-secondary/40"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{o.order_number}</div>
+                  <div className="truncate text-sm text-muted-foreground">{o.customer_name}</div>
+                </div>
+                <div className="text-right text-sm font-medium">{formatBRL(Number(o.total))}</div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant={statusVariant(o.status)}>{STATUS_LABELS[o.status] ?? o.status}</Badge>
+                <PaymentBadge status={o.payment_status} />
+                {scheduleBadge(o.delivery_date)}
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">
+                {items(o).reduce((s, i) => s + i.quantity, 0)} item(ns) · {new Date(o.created_at).toLocaleDateString("pt-BR")}
+                {o.delivery_date && <> · Agendado {fmtDateBR(o.delivery_date)}{o.delivery_time ? ` ${o.delivery_time}` : ""}</>}
+              </div>
+            </button>
+          ))}
+          {!isLoading && list.length === 0 && (
+            <div className="p-8 text-center text-sm text-muted-foreground">Nenhum pedido neste filtro.</div>
+          )}
         </div>
       </Card>
 

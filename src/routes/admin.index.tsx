@@ -35,14 +35,14 @@ function Dashboard() {
 
   return (
     <AdminShell title="Dashboard">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {kpis.map((s) => (
-          <Card key={s.label} className="border-none p-5 shadow-card-soft">
+          <Card key={s.label} className="border-none p-4 shadow-card-soft md:p-5">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{s.label}</span>
-              <s.icon className={`h-5 w-5 ${s.tint}`} />
+              <span className="text-xs text-muted-foreground md:text-sm">{s.label}</span>
+              <s.icon className={`h-5 w-5 shrink-0 ${s.tint}`} />
             </div>
-            <div className="mt-3 font-display text-3xl">{s.value}</div>
+            <div className="mt-2 font-display text-2xl md:mt-3 md:text-3xl">{s.value}</div>
           </Card>
         ))}
       </div>

@@ -68,7 +68,7 @@ function Clientes() {
         {isLoading ? "Carregando…" : `${clientes.length} cliente(s) — a partir dos pedidos recebidos`}
       </p>
       <Card className="border-none p-0 shadow-card-soft">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted-foreground">
               <tr>
@@ -100,6 +100,31 @@ function Clientes() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile: cards */}
+        <div className="divide-y divide-border/50 md:hidden">
+          {clientes.map((c) => (
+            <div key={c.telefone + c.nome} className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{c.nome}</div>
+                  <div className="truncate text-xs text-muted-foreground">{c.telefone}{c.email ? ` · ${c.email}` : ""}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">{formatBRL(c.total)}</div>
+                  <div className="text-xs text-muted-foreground">{c.pedidos} pedido(s)</div>
+                </div>
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Último: {new Date(c.ultimoPedido).toLocaleDateString("pt-BR")}
+              </div>
+            </div>
+          ))}
+          {!isLoading && clientes.length === 0 && (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              Nenhum cliente ainda. Os clientes aparecem aqui conforme os pedidos chegam.
+            </div>
+          )}
         </div>
       </Card>
     </AdminShell>

@@ -99,7 +99,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
           </div>
           <div className="hidden text-sm text-muted-foreground md:block">Bruna Café com Flores · Maravilha, SC</div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6">{children}</div>
       </div>
     </div>
   );

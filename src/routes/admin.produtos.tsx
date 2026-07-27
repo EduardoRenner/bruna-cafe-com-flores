@@ -133,16 +133,16 @@ function ProdutosAdmin() {
 
   return (
     <AdminShell title="Produtos">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {isLoading ? "Carregando…" : `${list.length} produtos cadastrados`}
         </p>
         <Button onClick={() => setEditing(emptyProduct())} className="bg-rose-deep text-primary-foreground">
-          <Plus className="mr-2 h-4 w-4" /> Adicionar produto
+          <Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Adicionar produto</span><span className="sm:hidden">Adicionar</span>
         </Button>
       </div>
       <Card className="border-none p-0 shadow-card-soft">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted-foreground">
               <tr>
@@ -182,6 +182,38 @@ function ProdutosAdmin() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile: cards */}
+        <div className="divide-y divide-border/50 md:hidden">
+          {list.map((p) => (
+            <div key={p.id} className="flex items-start gap-3 p-4">
+              {p.image_url ? (
+                <img src={p.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
+              ) : (
+                <div className="h-14 w-14 shrink-0 rounded-md bg-muted" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">{p.category}</div>
+                  </div>
+                  <div className="text-right text-sm font-medium">{formatBRL(Number(p.price))}</div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <Badge variant={p.active ? "default" : "secondary"}>{p.active ? "Ativo" : "Inativo"}</Badge>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => toggle(p)}><Power className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!isLoading && list.length === 0 && (
+            <div className="p-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</div>
+          )}
         </div>
       </Card>
 

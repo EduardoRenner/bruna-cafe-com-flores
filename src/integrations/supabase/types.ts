@@ -59,6 +59,24 @@ export type Database = {
         }
         Relationships: []
       }
+      order_rate_limit: {
+        Row: {
+          created_at: string
+          id: number
+          ip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          ip: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          ip?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -71,12 +89,9 @@ export type Database = {
           delivery_type: string
           id: string
           items: Json
-          mp_payment_id: string | null
-          mp_preference_id: string | null
           notes: string | null
           order_number: string
           payment_method: string
-          payment_provider: string | null
           payment_status: string
           status: string
           total: number
@@ -93,12 +108,9 @@ export type Database = {
           delivery_type: string
           id?: string
           items: Json
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
           notes?: string | null
           order_number: string
           payment_method: string
-          payment_provider?: string | null
           payment_status?: string
           status?: string
           total: number
@@ -115,12 +127,9 @@ export type Database = {
           delivery_type?: string
           id?: string
           items?: Json
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
           notes?: string | null
           order_number?: string
           payment_method?: string
-          payment_provider?: string | null
           payment_status?: string
           status?: string
           total?: number
@@ -190,6 +199,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_order_rate_limit: { Args: { _ip: string }; Returns: boolean }
       set_admin_password: {
         Args: { _new_password: string }
         Returns: undefined

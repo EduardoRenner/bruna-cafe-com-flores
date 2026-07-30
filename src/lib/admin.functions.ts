@@ -1,21 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 
-// IP do cliente para o rate limiting. Em produção roda num Cloudflare Worker,
-// que define `cf-connecting-ip` de forma confiável.
+// getClientIp mora em request.server.ts: ele importa
+// `@tanstack/react-start/server`, que a import-protection do Vite bloqueia se
+// aparecer no grafo do cliente (rotas admin importam este arquivo).
 async function getClientIp(): Promise<string> {
-  try {
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const headers = getRequest()?.headers;
-    if (!headers) return "unknown";
-    return (
-      headers.get("cf-connecting-ip") ||
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      headers.get("x-real-ip") ||
-      "unknown"
-    );
-  } catch {
-    return "unknown";
-  }
+  const { getClientIp: impl } = await import("@/lib/request.server");
+  return impl();
 }
 
 async function verifyAdmin(password: string) {

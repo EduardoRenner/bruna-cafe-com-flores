@@ -28,6 +28,19 @@ export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((data: CreateOrderInput) => data)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getClientIp } = await import("@/lib/request.server");
+
+    // Protege o checkout público contra spam/flood de pedidos falsos — mesmo
+    // padrão do rate limit de login do admin, aplicado por IP.
+    const ip = await getClientIp();
+    const { data: allowed, error: rateLimitError } = await supabaseAdmin.rpc(
+      "check_order_rate_limit",
+      { _ip: ip },
+    );
+    if (rateLimitError) throw new Error("Não foi possível processar o pedido");
+    if (!allowed) {
+      throw new Error("Muitos pedidos em pouco tempo. Aguarde alguns minutos e tente novamente.");
+    }
 
     if (!Array.isArray(data.items) || data.items.length === 0) {
       throw new Error("Pedido sem itens");

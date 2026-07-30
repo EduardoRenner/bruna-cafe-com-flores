@@ -93,6 +93,7 @@ export type Database = {
           order_number: string
           payment_method: string
           payment_status: string
+          public_token: string
           status: string
           total: number
           updated_at: string
@@ -112,6 +113,7 @@ export type Database = {
           order_number: string
           payment_method: string
           payment_status?: string
+          public_token?: string
           status?: string
           total: number
           updated_at?: string
@@ -131,11 +133,115 @@ export type Database = {
           order_number?: string
           payment_method?: string
           payment_status?: string
+          public_token?: string
           status?: string
           total?: number
           updated_at?: string
         }
         Relationships: []
+      }
+      payment_events: {
+        Row: {
+          error: string | null
+          event_type: string | null
+          id: number
+          payload: Json | null
+          payment_id: string | null
+          processed: boolean
+          provider: string
+          provider_event_id: string
+          received_at: string
+          signature_valid: boolean
+        }
+        Insert: {
+          error?: string | null
+          event_type?: string | null
+          id?: never
+          payload?: Json | null
+          payment_id?: string | null
+          processed?: boolean
+          provider: string
+          provider_event_id: string
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Update: {
+          error?: string | null
+          event_type?: string | null
+          id?: never
+          payload?: Json | null
+          payment_id?: string | null
+          processed?: boolean
+          provider?: string
+          provider_event_id?: string
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          method: string | null
+          order_id: string
+          paid_at: string | null
+          provider: string
+          provider_payment_id: string | null
+          provider_preference_id: string | null
+          status: string
+          status_detail: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string | null
+          order_id: string
+          paid_at?: string | null
+          provider: string
+          provider_payment_id?: string | null
+          provider_preference_id?: string | null
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string | null
+          order_id?: string
+          paid_at?: string | null
+          provider?: string
+          provider_payment_id?: string | null
+          provider_preference_id?: string | null
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -200,6 +306,27 @@ export type Database = {
     }
     Functions: {
       check_order_rate_limit: { Args: { _ip: string }; Returns: boolean }
+      confirm_payment: {
+        Args: {
+          _gateway_amount_cents: number
+          _gateway_status: string
+          _method?: string
+          _payment_id: string
+          _provider_payment_id: string
+          _status_detail?: string
+        }
+        Returns: string
+      }
+      get_order_public_status: {
+        Args: { _token: string }
+        Returns: {
+          created_at: string
+          order_number: string
+          payment_status: string
+          status: string
+          total: number
+        }[]
+      }
       set_admin_password: {
         Args: { _new_password: string }
         Returns: undefined

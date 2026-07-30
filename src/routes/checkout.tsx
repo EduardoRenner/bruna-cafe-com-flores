@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle2, MapPin, MessageCircle, Store, Truck } from "lucide-react";
+import { CheckCircle2, CreditCard, MapPin, MessageCircle, Store, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,8 @@ import { formatBRL } from "@/lib/products";
 import { store, whatsappLink } from "@/lib/store-info";
 import { fetchActiveZones } from "@/lib/delivery";
 import { createOrder } from "@/lib/order.functions";
+import { iniciarPagamento, pagamentoDisponivel } from "@/lib/payment.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Finalizar pedido — Bruna Café com Flores" }] }),
@@ -36,6 +38,18 @@ function CheckoutPage() {
   const createOrderFn = useServerFn(createOrder);
 
   const { data: zones } = useQuery({ queryKey: ["delivery-zones"], queryFn: fetchActiveZones });
+
+  // Enquanto a conta do gateway não estiver configurada isto vem `false` e o
+  // checkout se comporta exatamente como antes: só WhatsApp.
+  const pagarFn = useServerFn(iniciarPagamento);
+  const dispFn = useServerFn(pagamentoDisponivel);
+  const { data: pagamentoOnline } = useQuery({
+    queryKey: ["pagamento-disponivel"],
+    queryFn: () => dispFn({}),
+    staleTime: 5 * 60 * 1000,
+  });
+  const podePagarOnline = pagamentoOnline?.habilitado === true;
+  const [modoFinalizacao, setModoFinalizacao] = useState<"whatsapp" | "online">("whatsapp");
 
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [zoneId, setZoneId] = useState<string>("");
@@ -135,7 +149,11 @@ function CheckoutPage() {
     }));
 
     // Abre a aba do WhatsApp já dentro do clique (evita bloqueio de popup).
-    const waWindow = window.open("", "_blank");
+    // No pagamento online não abrimos nada: o cliente é levado ao gateway na
+    // própria aba, senão ele perde de vista a tela onde está pagando.
+    const pagarOnline = podePagarOnline && modoFinalizacao === "online";
+    const waWindow = pagarOnline ? null : window.open("", "_blank");
+    let orderToken: string | null = null;
 
     try {
       const res = await createOrderFn({
@@ -154,12 +172,42 @@ function CheckoutPage() {
         },
       });
       if (res?.orderNumber) orderNumber = res.orderNumber;
+      if (res?.orderToken) orderToken = res.orderToken;
       if (Array.isArray(res?.items)) {
         finalItems = res.items.filter((i) => i.name !== "Taxa de entrega");
         finalDeliveryFee = res.deliveryFee ?? finalDeliveryFee;
       }
     } catch (err) {
       console.error("Falha ao salvar o pedido:", err);
+      if (pagarOnline) {
+        // Sem pedido gravado não existe valor a cobrar. Melhor parar aqui do
+        // que mandar o cliente para uma tela de pagamento sem lastro.
+        toast.error("Não conseguimos registrar seu pedido. Tente novamente.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    if (pagarOnline) {
+      if (!orderToken) {
+        toast.error("Não conseguimos registrar seu pedido. Tente novamente.");
+        setSubmitting(false);
+        return;
+      }
+      try {
+        const pag = await pagarFn({ data: { orderToken } });
+        if (pag.ok) {
+          try { clear(); } catch { /* noop */ }
+          window.location.href = pag.redirectUrl;
+          return;
+        }
+        toast.error(pag.mensagem);
+      } catch (err) {
+        console.error("Falha ao iniciar pagamento:", err);
+        toast.error("Não conseguimos abrir o pagamento. Finalize pelo WhatsApp.");
+      }
+      setSubmitting(false);
+      return;
     }
 
     const itemLines = finalItems
@@ -209,7 +257,12 @@ function CheckoutPage() {
     } else {
       window.location.href = whatsappUrl;
     }
-    navigate({ to: "/pedido/$orderNumber", params: { orderNumber } });
+    // Usa o token quando existir: a página de confirmação consegue mostrar o
+    // status real do pedido, e o link não expõe a numeração sequencial.
+    navigate({
+      to: "/pedido/$orderNumber",
+      params: { orderNumber: orderToken ?? orderNumber },
+    });
     setSubmitting(false);
   }
 
@@ -423,9 +476,67 @@ function CheckoutPage() {
               </RadioGroup>
             </section>
 
+            {/* Só aparece quando existe gateway configurado. Sem conta ligada,
+                o checkout continua sendo exatamente o de sempre. */}
+            {podePagarOnline && (
+              <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-card-soft">
+                <h2 className="font-display text-xl">Como você quer finalizar?</h2>
+                <div className="mt-4 grid gap-3">
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors",
+                      modoFinalizacao === "online"
+                        ? "border-rose-deep bg-secondary/40"
+                        : "border-border hover:border-rose-deep/50",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="modoFinalizacao"
+                      className="mt-1 accent-rose-deep"
+                      checked={modoFinalizacao === "online"}
+                      onChange={() => setModoFinalizacao("online")}
+                    />
+                    <span>
+                      <span className="block font-medium">Pagar agora pelo site</span>
+                      <span className="block text-sm text-muted-foreground">
+                        Pix, cartão ou boleto em ambiente seguro do Mercado Pago.
+                      </span>
+                    </span>
+                  </label>
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors",
+                      modoFinalizacao === "whatsapp"
+                        ? "border-rose-deep bg-secondary/40"
+                        : "border-border hover:border-rose-deep/50",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="modoFinalizacao"
+                      className="mt-1 accent-rose-deep"
+                      checked={modoFinalizacao === "whatsapp"}
+                      onChange={() => setModoFinalizacao("whatsapp")}
+                    />
+                    <span>
+                      <span className="block font-medium">Combinar pelo WhatsApp</span>
+                      <span className="block text-sm text-muted-foreground">
+                        A gente confere tudo com você e combina o pagamento na conversa.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </section>
+            )}
+
             <Button type="submit" size="lg" className="w-full bg-rose-deep text-primary-foreground" disabled={submitting}>
               {submitting ? (
                 "Preparando pedido…"
+              ) : podePagarOnline && modoFinalizacao === "online" ? (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" /> Ir para o pagamento
+                </>
               ) : (
                 <>
                   <MessageCircle className="mr-2 h-4 w-4" /> Finalizar pelo WhatsApp

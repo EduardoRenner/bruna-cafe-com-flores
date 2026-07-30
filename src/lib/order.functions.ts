@@ -119,14 +119,19 @@ export const createOrder = createServerFn({ method: "POST" })
         total: 0, // recalculado pelo trigger a partir dos itens acima
         items,
       })
-      .select("order_number")
+      .select("order_number, public_token")
       .single();
 
     if (error) throw new Error(error.message);
     // Devolve os itens já precificados pelo servidor para o checkout montar a
     // mensagem do WhatsApp com os valores que realmente foram gravados.
+    //
+    // `orderToken` é o identificador aleatório do pedido: é com ele que o
+    // cliente inicia o pagamento e acompanha o status, em vez do número
+    // sequencial, que qualquer um conseguiria adivinhar.
     return {
       orderNumber: (row?.order_number as string) ?? null,
+      orderToken: (row?.public_token as string) ?? null,
       items,
       deliveryFee,
       total: items.reduce((s, i) => s + i.price * i.quantity, 0),

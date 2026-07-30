@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
+import { whatsappLink } from "@/lib/store-info";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -15,6 +16,9 @@ const links = [
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  // O Sheet precisa ser controlado: sem isso o menu continua aberto por cima da
+  // página depois que o cliente toca num link e a navegação acontece.
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { count, setOpen } = useCart();
 
@@ -67,7 +71,7 @@ export function Navbar() {
             )}
           </button>
           <Button asChild size="sm" className="bg-rose-deep text-primary-foreground hover:bg-rose-deep/90">
-            <a href="https://wa.me/554998105239" target="_blank" rel="noreferrer">WhatsApp</a>
+            <a href={whatsappLink("Olá! Vim pelo site.")} target="_blank" rel="noreferrer">WhatsApp</a>
           </Button>
         </nav>
         <div className="flex items-center gap-1 md:hidden">
@@ -83,7 +87,7 @@ export function Navbar() {
               </span>
             )}
           </button>
-        <Sheet>
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <button className={cn("rounded-md p-2", onHero ? "text-primary-foreground" : "text-foreground")} aria-label="Abrir menu">
               <Menu className="h-5 w-5" />
@@ -93,12 +97,17 @@ export function Navbar() {
             <SheetTitle className="font-display">Menu</SheetTitle>
             <div className="mt-8 flex flex-col gap-4">
               {links.map((l) => (
-                <Link key={l.to} to={l.to} className="text-lg font-medium text-foreground hover:text-rose-deep">
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setMenuOpen(false)}
+                  className="text-lg font-medium text-foreground hover:text-rose-deep"
+                >
                   {l.label}
                 </Link>
               ))}
               <Button asChild className="mt-4 bg-rose-deep text-primary-foreground">
-                <a href="https://wa.me/554998105239" target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
+                <a href={whatsappLink("Olá! Vim pelo site.")} target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
               </Button>
             </div>
           </SheetContent>

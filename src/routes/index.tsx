@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import heroImg from "@/assets/hero-storefront.jpg";
-import cafeImg from "@/assets/cafe-exterior.jpg";
-import bouquetImg from "@/assets/bouquet.jpg";
-import breakfastImg from "@/assets/breakfast-box.jpg";
+import heroImg from "@/assets/hero-storefront.webp";
+import cafeImg from "@/assets/cafe-exterior.webp";
+import bouquetImg from "@/assets/bouquet.webp";
+import breakfastImg from "@/assets/breakfast-box.webp";
 import { Petals } from "@/components/site/Petals";
 import { Flourish } from "@/components/site/Flourish";
 import { fetchActiveProducts, formatBRL } from "@/lib/products";
@@ -42,12 +42,16 @@ function Home() {
     <div>
       {/* HERO */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-24">
+        {/* Primeira imagem que o cliente vê: carrega com prioridade alta em vez
+            de disputar banda com o resto da página. */}
         <img
           src={heroImg}
           alt="Fachada da Bruna Café com Flores com flores rosas e brancas"
           className="absolute inset-0 h-full w-full object-cover"
-          width={1024}
-          height={1024}
+          width={733}
+          height={794}
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-hero" />
         <Petals count={12} />
@@ -116,7 +120,7 @@ function Home() {
               <Card key={p.id} className="group overflow-hidden border-none shadow-card-soft transition-all hover:-translate-y-1 hover:shadow-elegant">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   {p.image ? (
-                    <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   ) : (
                     <div className="grid h-full w-full place-items-center text-muted-foreground">Sem foto</div>
                   )}
@@ -206,10 +210,24 @@ function Home() {
             </a>
           </Button>
         </div>
-        <div className="reveal mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          {[bouquetImg, breakfastImg, cafeImg, heroImg, bouquetImg, breakfastImg].map((src, i) => (
-            <a key={i} href={`https://instagram.com/${store.instagram}`} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-xl">
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform hover:scale-110" />
+        {/* Só as fotos que existem de verdade: a grade antiga tinha 6 espaços e
+            repetia duas imagens, o que ficava visível como conteúdo duplicado. */}
+        <div className="reveal mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[
+            { src: bouquetImg, alt: "Buquê montado na loja" },
+            { src: breakfastImg, alt: "Box de café da manhã" },
+            { src: cafeImg, alt: "Fachada da loja com mesa de ferro" },
+            { src: heroImg, alt: "Entrada da loja decorada com flores" },
+          ].map((photo) => (
+            <a
+              key={photo.alt}
+              href={`https://instagram.com/${store.instagram}`}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`${photo.alt} — ver no Instagram @${store.instagram}`}
+              className="aspect-square overflow-hidden rounded-xl"
+            >
+              <img src={photo.src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform hover:scale-110" />
             </a>
           ))}
         </div>

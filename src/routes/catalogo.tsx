@@ -34,8 +34,15 @@ function Catalog() {
   });
 
   const products = useMemo(() => {
+    // Busca também na descrição e na categoria: quem procura "rosa" ou "café"
+    // espera achar itens mesmo quando a palavra não está no nome do produto.
+    const term = q.trim().toLowerCase();
     return (all ?? []).filter((p) => {
-      const okQ = p.name.toLowerCase().includes(q.toLowerCase());
+      const okQ =
+        !term ||
+        p.name.toLowerCase().includes(term) ||
+        p.description.toLowerCase().includes(term) ||
+        p.category.toLowerCase().includes(term);
       const okC = cat === "Todos" || p.category === cat;
       return okQ && okC && p.active;
     });
@@ -43,32 +50,36 @@ function Catalog() {
 
   return (
     <div className="pt-24">
-      <section className="mx-auto max-w-7xl px-6 py-10 md:px-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Catálogo</p>
-        <h1 className="mt-2 font-display text-5xl">Presentes para cada momento</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
+      <section className="mx-auto max-w-7xl px-6 py-6 md:px-8 md:py-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-rose-deep sm:text-sm">Catálogo</p>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl md:text-5xl">Presentes para cada momento</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:mt-3 md:text-base">
           Escolha um item abaixo, adicione ao carrinho e finalize seu pedido pelo WhatsApp. Também personalizamos qualquer item sob medida.
         </p>
       </section>
 
       <div className="mx-auto grid max-w-7xl gap-8 px-6 pb-24 md:grid-cols-[220px_1fr] md:px-8">
-        <aside className="space-y-6">
-          <div>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produto..." className="pl-9" />
-            </div>
+        {/* No mobile os filtros viram uma faixa compacta: uma lista vertical de
+            categorias empurrava os produtos para fora da primeira tela. */}
+        {/* min-w-0: sem isso a faixa de chips (itens shrink-0) define a largura
+            mínima da coluna do grid e estoura a página para o lado no mobile. */}
+        <aside className="min-w-0 space-y-4 md:space-y-6">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produto..." className="pl-9" />
           </div>
           <div>
-            <h3 className="font-display text-lg">Categorias</h3>
-            <div className="mt-3 flex flex-col gap-1">
+            <h3 className="hidden font-display text-lg md:block">Categorias</h3>
+            <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 md:mx-0 md:mt-3 md:flex-col md:gap-1 md:overflow-visible md:px-0 md:pb-0">
               {(["Todos", ...categories] as const).map((c) => (
                 <button
                   key={c}
                   onClick={() => setCat(c)}
                   className={cn(
-                    "rounded-md px-3 py-2 text-left text-sm transition-colors",
-                    cat === c ? "bg-rose-deep text-primary-foreground" : "hover:bg-secondary",
+                    "shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors md:rounded-md md:border-none md:px-3 md:py-2 md:text-left",
+                    cat === c
+                      ? "border-rose-deep bg-rose-deep text-primary-foreground"
+                      : "border-border hover:bg-secondary",
                   )}
                 >
                   {c}
@@ -93,7 +104,7 @@ function Catalog() {
                 <Card key={p.id} className="group flex flex-col overflow-hidden border-none shadow-card-soft transition-all hover:-translate-y-1 hover:shadow-elegant">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
                     {p.image ? (
-                      <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     ) : (
                       <div className="grid h-full w-full place-items-center text-muted-foreground">Sem foto</div>
                     )}

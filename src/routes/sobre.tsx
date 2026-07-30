@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { store } from "@/lib/store-info";
-import cafeImg from "@/assets/cafe-exterior.jpg";
-import heroImg from "@/assets/hero-storefront.jpg";
-import bouquetImg from "@/assets/bouquet.jpg";
+import cafeImg from "@/assets/cafe-exterior.webp";
+import heroImg from "@/assets/hero-storefront.webp";
+import bouquetImg from "@/assets/bouquet.webp";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Sparkles, Heart, Flower2 } from "lucide-react";
 import { useReveal } from "@/lib/use-reveal";

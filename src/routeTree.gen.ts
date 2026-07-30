@@ -9,40 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SobreRouteImport } from './routes/sobre'
-import { Route as ContatoRouteImport } from './routes/contato'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as CatalogoRouteImport } from './routes/catalogo'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
-import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
-import { Route as AdminIaRouteImport } from './routes/admin.ia'
-import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
+import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
 import { Route as ApiPublicProdutosRouteImport } from './routes/api/public/produtos'
 
-const SobreRoute = SobreRouteImport.update({
-  id: '/sobre',
-  path: '/sobre',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContatoRoute = ContatoRouteImport.update({
-  id: '/contato',
-  path: '/contato',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CatalogoRoute = CatalogoRouteImport.update({
-  id: '/catalogo',
-  path: '/catalogo',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -50,9 +33,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -60,29 +58,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const PedidoOrderNumberRoute = PedidoOrderNumberRouteImport.update({
-  id: '/pedido/$orderNumber',
-  path: '/pedido/$orderNumber',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminProdutosRoute = AdminProdutosRouteImport.update({
-  id: '/produtos',
-  path: '/produtos',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPedidosRoute = AdminPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminIaRoute = AdminIaRouteImport.update({
-  id: '/ia',
-  path: '/ia',
+const AdminClientesRoute = AdminClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
@@ -90,10 +68,20 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminClientesRoute = AdminClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
+const AdminPedidosRoute = AdminPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminProdutosRoute = AdminProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PedidoOrderNumberRoute = PedidoOrderNumberRouteImport.update({
+  id: '/pedido/$orderNumber',
+  path: '/pedido/$orderNumber',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicProdutosRoute = ApiPublicProdutosRouteImport.update({
   id: '/api/public/produtos',
@@ -110,10 +98,8 @@ export interface FileRoutesByFullPath {
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
-  '/admin/ia': typeof AdminIaRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
-  '/api/chat': typeof ApiChatRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -126,10 +112,8 @@ export interface FileRoutesByTo {
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
-  '/admin/ia': typeof AdminIaRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
-  '/api/chat': typeof ApiChatRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -144,10 +128,8 @@ export interface FileRoutesById {
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
-  '/admin/ia': typeof AdminIaRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
-  '/api/chat': typeof ApiChatRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -163,10 +145,8 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
-    | '/admin/ia'
     | '/admin/pedidos'
     | '/admin/produtos'
-    | '/api/chat'
     | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
@@ -179,10 +159,8 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
-    | '/admin/ia'
     | '/admin/pedidos'
     | '/admin/produtos'
-    | '/api/chat'
     | '/pedido/$orderNumber'
     | '/admin'
     | '/api/public/produtos'
@@ -196,10 +174,8 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
-    | '/admin/ia'
     | '/admin/pedidos'
     | '/admin/produtos'
-    | '/api/chat'
     | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
@@ -212,39 +188,17 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContatoRoute: typeof ContatoRoute
   SobreRoute: typeof SobreRoute
-  ApiChatRoute: typeof ApiChatRoute
   PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
   ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sobre': {
-      id: '/sobre'
-      path: '/sobre'
-      fullPath: '/sobre'
-      preLoaderRoute: typeof SobreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contato': {
-      id: '/contato'
-      path: '/contato'
-      fullPath: '/contato'
-      preLoaderRoute: typeof ContatoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/catalogo': {
-      id: '/catalogo'
-      path: '/catalogo'
-      fullPath: '/catalogo'
-      preLoaderRoute: typeof CatalogoRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -254,11 +208,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -268,39 +243,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/pedido/$orderNumber': {
-      id: '/pedido/$orderNumber'
-      path: '/pedido/$orderNumber'
-      fullPath: '/pedido/$orderNumber'
-      preLoaderRoute: typeof PedidoOrderNumberRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/produtos': {
-      id: '/admin/produtos'
-      path: '/produtos'
-      fullPath: '/admin/produtos'
-      preLoaderRoute: typeof AdminProdutosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pedidos': {
-      id: '/admin/pedidos'
-      path: '/pedidos'
-      fullPath: '/admin/pedidos'
-      preLoaderRoute: typeof AdminPedidosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/ia': {
-      id: '/admin/ia'
-      path: '/ia'
-      fullPath: '/admin/ia'
-      preLoaderRoute: typeof AdminIaRouteImport
+    '/admin/clientes': {
+      id: '/admin/clientes'
+      path: '/clientes'
+      fullPath: '/admin/clientes'
+      preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/configuracoes': {
@@ -310,12 +257,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/clientes': {
-      id: '/admin/clientes'
-      path: '/clientes'
-      fullPath: '/admin/clientes'
-      preLoaderRoute: typeof AdminClientesRouteImport
+    '/admin/pedidos': {
+      id: '/admin/pedidos'
+      path: '/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AdminPedidosRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/produtos': {
+      id: '/admin/produtos'
+      path: '/produtos'
+      fullPath: '/admin/produtos'
+      preLoaderRoute: typeof AdminProdutosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/pedido/$orderNumber': {
+      id: '/pedido/$orderNumber'
+      path: '/pedido/$orderNumber'
+      fullPath: '/pedido/$orderNumber'
+      preLoaderRoute: typeof PedidoOrderNumberRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/produtos': {
       id: '/api/public/produtos'
@@ -330,7 +291,6 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminClientesRoute: typeof AdminClientesRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
-  AdminIaRoute: typeof AdminIaRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -339,7 +299,6 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClientesRoute: AdminClientesRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
-  AdminIaRoute: AdminIaRoute,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminProdutosRoute: AdminProdutosRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -354,10 +313,19 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContatoRoute: ContatoRoute,
   SobreRoute: SobreRoute,
-  ApiChatRoute: ApiChatRoute,
   PedidoOrderNumberRoute: PedidoOrderNumberRoute,
   ApiPublicProdutosRoute: ApiPublicProdutosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

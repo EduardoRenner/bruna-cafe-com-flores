@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type Category = "Flores" | "Café & Box" | "Presentes" | "Arranjos";
+export type Category = "Flores" | "Café & Box" | "Presentes" | "Arranjos" | "Buquês";
 
 // Produto usado na UI. `image` continua sendo o campo exibido nos componentes;
 // no banco a coluna é `image_url` (mapeada no fetch abaixo).
@@ -14,7 +14,7 @@ export interface Product {
   active: boolean;
 }
 
-export const categories: Category[] = ["Flores", "Café & Box", "Presentes", "Arranjos"];
+export const categories: Category[] = ["Flores", "Café & Box", "Presentes", "Arranjos", "Buquês"];
 
 export function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

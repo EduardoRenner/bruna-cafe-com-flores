@@ -8,13 +8,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
-import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartProvider } from "@/lib/cart";
 import { CartSheet } from "@/components/site/CartSheet";
 import { Toaster } from "@/components/ui/sonner";
@@ -41,9 +39,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -71,8 +66,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Bruna Café com Flores — Floricultura e Café em Maravilha SC" },
       { name: "twitter:description", content: "Transformamos momentos em memórias. Flores frescas, café da manhã na porta e presentes personalizados em Maravilha, SC." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5fff71cb-5c6d-4be1-886d-8c27b3f94682/id-preview-0b6de527--b0afd98f-c4ee-41d2-91f2-6e12595b1fb4.lovable.app-1784641403532.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5fff71cb-5c6d-4be1-886d-8c27b3f94682/id-preview-0b6de527--b0afd98f-c4ee-41d2-91f2-6e12595b1fb4.lovable.app-1784641403532.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -114,7 +107,6 @@ function RootComponent() {
             <Outlet />
           </main>
           <Footer />
-          <ChatWidget />
           <CartSheet />
         </CartProvider>
       )}

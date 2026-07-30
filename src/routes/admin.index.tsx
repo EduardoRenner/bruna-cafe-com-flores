@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, DollarSign, Package, Clock, Sparkles } from "lucide-react";
+import { ShoppingBag, DollarSign, Package, Clock } from "lucide-react";
 import { formatBRL } from "@/lib/products";
 import { getPassword } from "@/lib/auth";
 import { adminStats } from "@/lib/admin.functions";
@@ -90,7 +90,7 @@ function Dashboard() {
         </Card>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
+      <div className="mt-6">
         <Card className="border-none p-6 shadow-card-soft">
           <h3 className="font-display text-lg">Resumo do período</h3>
           <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
@@ -100,19 +100,6 @@ function Dashboard() {
             <div><dt className="text-muted-foreground">Produto campeão</dt><dd className="mt-1 font-medium">{data?.produtoCampeao ?? "—"}</dd></div>
             <div><dt className="text-muted-foreground">Horário de pico</dt><dd className="mt-1 font-medium">{data?.horarioPico ?? "—"}</dd></div>
           </dl>
-        </Card>
-        <Card className="border-none p-6 shadow-card-soft">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-rose-deep" />
-            <h3 className="font-display text-lg">Chatbot IA</h3>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-leaf" />
-            <span className="text-sm text-muted-foreground">Online e respondendo</span>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            A assistente virtual está ativa no site, ajudando os clientes a escolher flores, cafés e presentes.
-          </p>
         </Card>
       </div>
     </AdminShell>

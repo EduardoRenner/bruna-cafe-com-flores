@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, ShoppingBag, Users, Sparkles, Settings, LogOut, Flower2, Menu } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Flower2, Menu } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { logout } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,6 @@ const nav: NavItem[] = [
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
   { to: "/admin/clientes", label: "Clientes", icon: Users },
-  { to: "/admin/ia", label: "IA Assistant", icon: Sparkles },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 

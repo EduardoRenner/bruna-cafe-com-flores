@@ -122,9 +122,10 @@ function CheckoutPage() {
     const paymentDb = PAYMENT_DB[paymentLabel] ?? "pix";
 
     let orderNumber = "BCF-" + Date.now().toString().slice(-6);
-
-    const productsTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const recalculatedTotal = productsTotal + deliveryFee;
+    // Fallback com os valores do carrinho (usado só se a chamada ao servidor falhar);
+    // quando ela funciona, sobrescrevemos com os valores que o servidor realmente gravou.
+    let finalItems = items.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price }));
+    let finalDeliveryFee = deliveryFee;
 
     const dbItems: { id?: string; name: string; quantity: number; price: number }[] = items.map((i) => ({
       id: i.id,
@@ -132,9 +133,6 @@ function CheckoutPage() {
       quantity: i.quantity,
       price: i.price,
     }));
-    if (deliveryType === "delivery" && deliveryFee > 0) {
-      dbItems.push({ name: "Taxa de entrega", quantity: 1, price: deliveryFee });
-    }
 
     // Abre a aba do WhatsApp já dentro do clique (evita bloqueio de popup).
     const waWindow = window.open("", "_blank");
@@ -156,17 +154,21 @@ function CheckoutPage() {
         },
       });
       if (res?.orderNumber) orderNumber = res.orderNumber;
+      if (Array.isArray(res?.items)) {
+        finalItems = res.items.filter((i) => i.name !== "Taxa de entrega");
+        finalDeliveryFee = res.deliveryFee ?? finalDeliveryFee;
+      }
     } catch (err) {
       console.error("Falha ao salvar o pedido:", err);
     }
 
-    const itemLines = items
+    const itemLines = finalItems
       .map((i) => `  - ${i.quantity}x ${i.name} — ${formatBRL(i.price * i.quantity)}`)
       .join("\n");
 
     const deliveryLine =
       deliveryType === "delivery"
-        ? `*Entrega*\n  Endereço: ${rua}, ${numero} - ${bairro}${cep ? " · CEP " + cep : ""}${complemento ? " · " + complemento : ""}\n  Frete: ${formatBRL(deliveryFee)}`
+        ? `*Entrega*\n  Endereço: ${rua}, ${numero} - ${bairro}${cep ? " · CEP " + cep : ""}${complemento ? " · " + complemento : ""}\n  Frete: ${formatBRL(finalDeliveryFee)}`
         : `*Retirada na loja*`;
 
     const dateLine = dateRaw
@@ -190,7 +192,7 @@ function CheckoutPage() {
       paymentLine,
       notesLine,
       ``,
-      `*Total: ${formatBRL(recalculatedTotal)}*`,
+      `*Total: ${formatBRL(finalItems.reduce((s, i) => s + i.price * i.quantity, 0) + finalDeliveryFee)}*`,
       ``,
       `Pedido feito pelo site — Bruna Café com Flores`,
     ]

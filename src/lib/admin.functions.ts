@@ -90,7 +90,8 @@ export const adminListProducts = createServerFn({ method: "POST" })
     const { data: products, error } = await admin
       .from("products")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return products ?? [];
   });
@@ -121,10 +122,51 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
       image_url: p.image_url ?? null,
       active: p.active,
     };
-    const { error } = p.id
-      ? await admin.from("products").update(payload).eq("id", p.id)
-      : await admin.from("products").insert(payload);
+    if (p.id) {
+      const { error } = await admin.from("products").update(payload).eq("id", p.id);
+      if (error) throw new Error(error.message);
+      return { ok: true as const };
+    }
+    // Produto novo entra no fim da ordem do catálogo.
+    const { data: ultimo } = await admin
+      .from("products")
+      .select("display_order")
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { error } = await admin
+      .from("products")
+      .insert({ ...payload, display_order: (ultimo?.display_order ?? 0) + 1 });
     if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/**
+ * Troca a posição de dois produtos na ordem do catálogo (setas ↑↓ no admin).
+ * O cliente manda os dois ids e os dois valores; o servidor confere no banco.
+ */
+export const adminSwapProductOrder = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string; aId: string; bId: string }) => data)
+  .handler(async ({ data }) => {
+    const admin = await verifyAdmin(data.password);
+    const { data: rows, error: erroLeitura } = await admin
+      .from("products")
+      .select("id, display_order")
+      .in("id", [data.aId, data.bId]);
+    if (erroLeitura) throw new Error(erroLeitura.message);
+    const a = rows?.find((r) => r.id === data.aId);
+    const b = rows?.find((r) => r.id === data.bId);
+    if (!a || !b) throw new Error("Produto não encontrado");
+
+    // Empate (ex.: dois com 0) quebraria a troca — desempata com valores distintos.
+    const ordemA = a.display_order === b.display_order ? b.display_order + 1 : b.display_order;
+    const ordemB = a.display_order === b.display_order ? b.display_order : a.display_order;
+
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      admin.from("products").update({ display_order: ordemA }).eq("id", a.id),
+      admin.from("products").update({ display_order: ordemB }).eq("id", b.id),
+    ]);
+    if (e1 || e2) throw new Error(e1?.message ?? e2?.message ?? "Erro ao reordenar");
     return { ok: true as const };
   });
 

@@ -38,6 +38,7 @@ export const Route = createFileRoute("/api/integrations/n8n/catalogo")({
               .from("products")
               .select("id,name,description,price,category,active")
               .eq("active", true)
+              .order("display_order", { ascending: true })
               .order("category", { ascending: true }),
             supabaseAdmin
               .from("delivery_zones")

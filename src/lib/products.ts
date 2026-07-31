@@ -48,6 +48,7 @@ export async function fetchActiveProducts(): Promise<Product[]> {
     .from("products")
     .select("id,name,description,price,category,image_url,active")
     .eq("active", true)
+    .order("display_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data as ProductRow[]).map(rowToProduct);

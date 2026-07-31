@@ -89,9 +89,12 @@ export type Database = {
           delivery_type: string
           id: string
           items: Json
+          mp_payment_id: string | null
+          mp_preference_id: string | null
           notes: string | null
           order_number: string
           payment_method: string
+          payment_provider: string | null
           payment_status: string
           public_token: string
           status: string
@@ -109,9 +112,12 @@ export type Database = {
           delivery_type: string
           id?: string
           items: Json
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number: string
           payment_method: string
+          payment_provider?: string | null
           payment_status?: string
           public_token?: string
           status?: string
@@ -129,9 +135,12 @@ export type Database = {
           delivery_type?: string
           id?: string
           items?: Json
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number?: string
           payment_method?: string
+          payment_provider?: string | null
           payment_status?: string
           public_token?: string
           status?: string
@@ -243,6 +252,66 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          is_public: boolean
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          is_public?: boolean
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          is_public?: boolean
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       whatsapp_conversations: {
         Row: {
           created_at: string
@@ -294,63 +363,6 @@ export type Database = {
           message_id?: string
           phone?: string
           received_at?: string
-        }
-        Relationships: []
-      }
-      products: {
-        Row: {
-          active: boolean
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          name: string
-          price: number
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          category: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          name: string
-          price: number
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          price?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      settings: {
-        Row: {
-          is_public: boolean
-          key: string
-          updated_at: string
-          value: Json
-        }
-        Insert: {
-          is_public?: boolean
-          key: string
-          updated_at?: string
-          value: Json
-        }
-        Update: {
-          is_public?: boolean
-          key?: string
-          updated_at?: string
-          value?: Json
         }
         Relationships: []
       }

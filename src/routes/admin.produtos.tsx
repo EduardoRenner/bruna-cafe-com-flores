@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Power, Trash2, Upload } from "lucide-react";
+import { Plus, Pencil, Power, Trash2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import { categories, formatBRL, type Category } from "@/lib/products";
 import { getPassword } from "@/lib/auth";
 import {
@@ -21,6 +21,7 @@ import {
   adminUpsertProduct,
   adminDeleteProduct,
   adminUploadProductImage,
+  adminSwapProductOrder,
 } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ type AdminProduct = {
   category: string;
   image_url: string | null;
   active: boolean;
+  display_order?: number;
 };
 
 function emptyProduct(): AdminProduct {
@@ -47,10 +49,12 @@ function ProdutosAdmin() {
   const upsertFn = useServerFn(adminUpsertProduct);
   const deleteFn = useServerFn(adminDeleteProduct);
   const uploadFn = useServerFn(adminUploadProductImage);
+  const swapFn = useServerFn(adminSwapProductOrder);
 
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [deleting, setDeleting] = useState<AdminProduct | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: list = [], isLoading } = useQuery({
@@ -107,6 +111,23 @@ function ProdutosAdmin() {
     }
   }
 
+  // Reordena trocando com o vizinho: a ordem do admin é exatamente a ordem
+  // que o cliente vê no catálogo.
+  async function move(index: number, dir: -1 | 1) {
+    const a = list[index];
+    const b = list[index + dir];
+    if (!a?.id || !b?.id || reordering) return;
+    setReordering(true);
+    try {
+      await swapFn({ data: { password, aId: a.id, bId: b.id } });
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao reordenar");
+    } finally {
+      setReordering(false);
+    }
+  }
+
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !editing) return;
@@ -154,7 +175,7 @@ function ProdutosAdmin() {
               </tr>
             </thead>
             <tbody>
-              {list.map((p) => (
+              {list.map((p, i) => (
                 <tr key={p.id} className="border-b border-border/50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -171,6 +192,8 @@ function ProdutosAdmin() {
                     <Badge variant={p.active ? "default" : "secondary"}>{p.active ? "Ativo" : "Inativo"}</Badge>
                   </td>
                   <td className="p-4 text-right">
+                    <Button variant="ghost" size="sm" disabled={i === 0 || reordering} onClick={() => move(i, -1)} title="Subir"><ArrowUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={i === list.length - 1 || reordering} onClick={() => move(i, 1)} title="Descer"><ArrowDown className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => toggle(p)}><Power className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
@@ -185,7 +208,7 @@ function ProdutosAdmin() {
         </div>
         {/* Mobile: cards */}
         <div className="divide-y divide-border/50 md:hidden">
-          {list.map((p) => (
+          {list.map((p, i) => (
             <div key={p.id} className="flex items-start gap-3 p-4">
               {p.image_url ? (
                 <img src={p.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
@@ -203,6 +226,8 @@ function ProdutosAdmin() {
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <Badge variant={p.active ? "default" : "secondary"}>{p.active ? "Ativo" : "Inativo"}</Badge>
                   <div className="flex items-center">
+                    <Button variant="ghost" size="sm" disabled={i === 0 || reordering} onClick={() => move(i, -1)}><ArrowUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={i === list.length - 1 || reordering} onClick={() => move(i, 1)}><ArrowDown className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => toggle(p)}><Power className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>

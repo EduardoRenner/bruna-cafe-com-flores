@@ -23,6 +23,7 @@ import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
 import { Route as ApiPublicProdutosRouteImport } from './routes/api/public/produtos'
 import { Route as ApiWebhooksMercadopagoRouteImport } from './routes/api/webhooks/mercadopago'
+import { Route as ApiWebhooksWhatsappRouteImport } from './routes/api/webhooks/whatsapp'
 import { Route as ApiIntegrationsN8nCatalogoRouteImport } from './routes/api/integrations/n8n/catalogo'
 import { Route as ApiIntegrationsN8nPedidosRouteImport } from './routes/api/integrations/n8n/pedidos'
 import { Route as ApiIntegrationsN8nPedidosStatusRouteImport } from './routes/api/integrations/n8n/pedidos.status'
@@ -97,6 +98,11 @@ const ApiWebhooksMercadopagoRoute = ApiWebhooksMercadopagoRouteImport.update({
   path: '/api/webhooks/mercadopago',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksWhatsappRoute = ApiWebhooksWhatsappRouteImport.update({
+  id: '/api/webhooks/whatsapp',
+  path: '/api/webhooks/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntegrationsN8nCatalogoRoute =
   ApiIntegrationsN8nCatalogoRouteImport.update({
     id: '/api/integrations/n8n/catalogo',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/webhooks/whatsapp': typeof ApiWebhooksWhatsappRoute
   '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
   '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
   '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/webhooks/whatsapp': typeof ApiWebhooksWhatsappRoute
   '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
   '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
   '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/webhooks/whatsapp': typeof ApiWebhooksWhatsappRoute
   '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
   '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
   '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/webhooks/whatsapp'
     | '/api/integrations/n8n/catalogo'
     | '/api/integrations/n8n/pedidos'
     | '/api/integrations/n8n/pedidos/status'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/webhooks/whatsapp'
     | '/api/integrations/n8n/catalogo'
     | '/api/integrations/n8n/pedidos'
     | '/api/integrations/n8n/pedidos/status'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/webhooks/whatsapp'
     | '/api/integrations/n8n/catalogo'
     | '/api/integrations/n8n/pedidos'
     | '/api/integrations/n8n/pedidos/status'
@@ -242,6 +254,7 @@ export interface RootRouteChildren {
   PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
   ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
   ApiWebhooksMercadopagoRoute: typeof ApiWebhooksMercadopagoRoute
+  ApiWebhooksWhatsappRoute: typeof ApiWebhooksWhatsappRoute
   ApiIntegrationsN8nCatalogoRoute: typeof ApiIntegrationsN8nCatalogoRoute
   ApiIntegrationsN8nPedidosRoute: typeof ApiIntegrationsN8nPedidosRouteWithChildren
 }
@@ -346,6 +359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksMercadopagoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/whatsapp': {
+      id: '/api/webhooks/whatsapp'
+      path: '/api/webhooks/whatsapp'
+      fullPath: '/api/webhooks/whatsapp'
+      preLoaderRoute: typeof ApiWebhooksWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/n8n/catalogo': {
       id: '/api/integrations/n8n/catalogo'
       path: '/api/integrations/n8n/catalogo'
@@ -412,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   PedidoOrderNumberRoute: PedidoOrderNumberRoute,
   ApiPublicProdutosRoute: ApiPublicProdutosRoute,
   ApiWebhooksMercadopagoRoute: ApiWebhooksMercadopagoRoute,
+  ApiWebhooksWhatsappRoute: ApiWebhooksWhatsappRoute,
   ApiIntegrationsN8nCatalogoRoute: ApiIntegrationsN8nCatalogoRoute,
   ApiIntegrationsN8nPedidosRoute: ApiIntegrationsN8nPedidosRouteWithChildren,
 }

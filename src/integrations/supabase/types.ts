@@ -243,6 +243,60 @@ export type Database = {
           },
         ]
       }
+      whatsapp_conversations: {
+        Row: {
+          created_at: string
+          draft_order: Json | null
+          history: Json
+          human_takeover: boolean
+          id: string
+          last_message_at: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          draft_order?: Json | null
+          history?: Json
+          human_takeover?: boolean
+          id?: string
+          last_message_at?: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          draft_order?: Json | null
+          history?: Json
+          human_takeover?: boolean
+          id?: string
+          last_message_at?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_message_events: {
+        Row: {
+          id: number
+          message_id: string
+          phone: string
+          received_at: string
+        }
+        Insert: {
+          id?: never
+          message_id: string
+          phone: string
+          received_at?: string
+        }
+        Update: {
+          id?: never
+          message_id?: string
+          phone?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -306,6 +360,7 @@ export type Database = {
     }
     Functions: {
       check_order_rate_limit: { Args: { _ip: string }; Returns: boolean }
+      check_whatsapp_rate_limit: { Args: { _phone: string }; Returns: boolean }
       confirm_payment: {
         Args: {
           _gateway_amount_cents: number

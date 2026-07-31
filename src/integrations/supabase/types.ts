@@ -59,24 +59,6 @@ export type Database = {
         }
         Relationships: []
       }
-      order_rate_limit: {
-        Row: {
-          created_at: string
-          id: number
-          ip: string
-        }
-        Insert: {
-          created_at?: string
-          id?: never
-          ip: string
-        }
-        Update: {
-          created_at?: string
-          id?: never
-          ip?: string
-        }
-        Relationships: []
-      }
       orders: {
         Row: {
           created_at: string
@@ -89,11 +71,13 @@ export type Database = {
           delivery_type: string
           id: string
           items: Json
+          mp_payment_id: string | null
+          mp_preference_id: string | null
           notes: string | null
           order_number: string
           payment_method: string
+          payment_provider: string | null
           payment_status: string
-          public_token: string
           status: string
           total: number
           updated_at: string
@@ -109,11 +93,13 @@ export type Database = {
           delivery_type: string
           id?: string
           items: Json
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number: string
           payment_method: string
+          payment_provider?: string | null
           payment_status?: string
-          public_token?: string
           status?: string
           total: number
           updated_at?: string
@@ -129,171 +115,16 @@ export type Database = {
           delivery_type?: string
           id?: string
           items?: Json
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number?: string
           payment_method?: string
+          payment_provider?: string | null
           payment_status?: string
-          public_token?: string
           status?: string
           total?: number
           updated_at?: string
-        }
-        Relationships: []
-      }
-      payment_events: {
-        Row: {
-          error: string | null
-          event_type: string | null
-          id: number
-          payload: Json | null
-          payment_id: string | null
-          processed: boolean
-          provider: string
-          provider_event_id: string
-          received_at: string
-          signature_valid: boolean
-        }
-        Insert: {
-          error?: string | null
-          event_type?: string | null
-          id?: never
-          payload?: Json | null
-          payment_id?: string | null
-          processed?: boolean
-          provider: string
-          provider_event_id: string
-          received_at?: string
-          signature_valid?: boolean
-        }
-        Update: {
-          error?: string | null
-          event_type?: string | null
-          id?: never
-          payload?: Json | null
-          payment_id?: string | null
-          processed?: boolean
-          provider?: string
-          provider_event_id?: string
-          received_at?: string
-          signature_valid?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_events_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      payments: {
-        Row: {
-          amount_cents: number
-          created_at: string
-          currency: string
-          id: string
-          method: string | null
-          order_id: string
-          paid_at: string | null
-          provider: string
-          provider_payment_id: string | null
-          provider_preference_id: string | null
-          status: string
-          status_detail: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount_cents: number
-          created_at?: string
-          currency?: string
-          id?: string
-          method?: string | null
-          order_id: string
-          paid_at?: string | null
-          provider: string
-          provider_payment_id?: string | null
-          provider_preference_id?: string | null
-          status?: string
-          status_detail?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          created_at?: string
-          currency?: string
-          id?: string
-          method?: string | null
-          order_id?: string
-          paid_at?: string | null
-          provider?: string
-          provider_payment_id?: string | null
-          provider_preference_id?: string | null
-          status?: string
-          status_detail?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_conversations: {
-        Row: {
-          created_at: string
-          draft_order: Json | null
-          history: Json
-          human_takeover: boolean
-          id: string
-          last_message_at: string
-          phone: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          draft_order?: Json | null
-          history?: Json
-          human_takeover?: boolean
-          id?: string
-          last_message_at?: string
-          phone: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          draft_order?: Json | null
-          history?: Json
-          human_takeover?: boolean
-          id?: string
-          last_message_at?: string
-          phone?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      whatsapp_message_events: {
-        Row: {
-          id: number
-          message_id: string
-          phone: string
-          received_at: string
-        }
-        Insert: {
-          id?: never
-          message_id: string
-          phone: string
-          received_at?: string
-        }
-        Update: {
-          id?: never
-          message_id?: string
-          phone?: string
-          received_at?: string
         }
         Relationships: []
       }
@@ -359,29 +190,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_order_rate_limit: { Args: { _ip: string }; Returns: boolean }
-      check_whatsapp_rate_limit: { Args: { _phone: string }; Returns: boolean }
-      confirm_payment: {
-        Args: {
-          _gateway_amount_cents: number
-          _gateway_status: string
-          _method?: string
-          _payment_id: string
-          _provider_payment_id: string
-          _status_detail?: string
-        }
-        Returns: string
-      }
-      get_order_public_status: {
-        Args: { _token: string }
-        Returns: {
-          created_at: string
-          order_number: string
-          payment_status: string
-          status: string
-          total: number
-        }[]
-      }
       set_admin_password: {
         Args: { _new_password: string }
         Returns: undefined

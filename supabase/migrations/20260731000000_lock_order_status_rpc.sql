@@ -1,0 +1,24 @@
+-- =============================================================================
+-- Fecha get_order_public_status para as chaves públicas.
+--
+-- A migration de pagamento (20260730120000_payments.sql) tinha:
+--   REVOKE ALL ON FUNCTION public.get_order_public_status(TEXT) FROM PUBLIC;
+-- Diferente de confirm_payment, que revogava explicitamente de
+-- "PUBLIC, anon, authenticated". Só revogar de PUBLIC não bastou: o Supabase
+-- concede EXECUTE em funções novas do schema public para anon/authenticated
+-- por privilégio padrão do schema, independente do pseudo-papel PUBLIC.
+--
+-- Resultado prático: com a chave pública (a mesma exposta em qualquer página
+-- do site), dava para chamar POST /rest/v1/rpc/get_order_public_status
+-- diretamente, pulando por completo o endpoint da API do n8n — inclusive a
+-- exigência de N8N_API_KEY nele. Achado e corrigido em auditoria de
+-- 2026-07-31 (confirmado com has_function_privilege antes/depois da correção).
+--
+-- Sem consequência prática grave — a função só devolve um resumo do pedido
+-- (número, status, total) para quem já souber o token aleatório de 192 bits,
+-- que é exatamente o modelo de acesso pretendido — mas violava a garantia
+-- documentada de que rotas internas só são alcançáveis pelos endpoints
+-- validados do servidor, nunca direto pelo banco com a chave pública.
+-- =============================================================================
+REVOKE ALL ON FUNCTION public.get_order_public_status(TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_order_public_status(TEXT) TO service_role;

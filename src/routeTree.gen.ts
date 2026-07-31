@@ -23,6 +23,9 @@ import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
 import { Route as ApiPublicProdutosRouteImport } from './routes/api/public/produtos'
 import { Route as ApiWebhooksMercadopagoRouteImport } from './routes/api/webhooks/mercadopago'
+import { Route as ApiIntegrationsN8nCatalogoRouteImport } from './routes/api/integrations/n8n/catalogo'
+import { Route as ApiIntegrationsN8nPedidosRouteImport } from './routes/api/integrations/n8n/pedidos'
+import { Route as ApiIntegrationsN8nPedidosStatusRouteImport } from './routes/api/integrations/n8n/pedidos.status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +97,24 @@ const ApiWebhooksMercadopagoRoute = ApiWebhooksMercadopagoRouteImport.update({
   path: '/api/webhooks/mercadopago',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsN8nCatalogoRoute =
+  ApiIntegrationsN8nCatalogoRouteImport.update({
+    id: '/api/integrations/n8n/catalogo',
+    path: '/api/integrations/n8n/catalogo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsN8nPedidosRoute =
+  ApiIntegrationsN8nPedidosRouteImport.update({
+    id: '/api/integrations/n8n/pedidos',
+    path: '/api/integrations/n8n/pedidos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsN8nPedidosStatusRoute =
+  ApiIntegrationsN8nPedidosStatusRouteImport.update({
+    id: '/status',
+    path: '/status',
+    getParentRoute: () => ApiIntegrationsN8nPedidosRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +131,9 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
+  '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
+  '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +149,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
+  '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
+  '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +169,9 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
   '/api/webhooks/mercadopago': typeof ApiWebhooksMercadopagoRoute
+  '/api/integrations/n8n/catalogo': typeof ApiIntegrationsN8nCatalogoRoute
+  '/api/integrations/n8n/pedidos': typeof ApiIntegrationsN8nPedidosRouteWithChildren
+  '/api/integrations/n8n/pedidos/status': typeof ApiIntegrationsN8nPedidosStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +190,9 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/integrations/n8n/catalogo'
+    | '/api/integrations/n8n/pedidos'
+    | '/api/integrations/n8n/pedidos/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +208,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/integrations/n8n/catalogo'
+    | '/api/integrations/n8n/pedidos'
+    | '/api/integrations/n8n/pedidos/status'
   id:
     | '__root__'
     | '/'
@@ -191,6 +227,9 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/produtos'
     | '/api/webhooks/mercadopago'
+    | '/api/integrations/n8n/catalogo'
+    | '/api/integrations/n8n/pedidos'
+    | '/api/integrations/n8n/pedidos/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -203,6 +242,8 @@ export interface RootRouteChildren {
   PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
   ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
   ApiWebhooksMercadopagoRoute: typeof ApiWebhooksMercadopagoRoute
+  ApiIntegrationsN8nCatalogoRoute: typeof ApiIntegrationsN8nCatalogoRoute
+  ApiIntegrationsN8nPedidosRoute: typeof ApiIntegrationsN8nPedidosRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -305,6 +346,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhooksMercadopagoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/n8n/catalogo': {
+      id: '/api/integrations/n8n/catalogo'
+      path: '/api/integrations/n8n/catalogo'
+      fullPath: '/api/integrations/n8n/catalogo'
+      preLoaderRoute: typeof ApiIntegrationsN8nCatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/n8n/pedidos': {
+      id: '/api/integrations/n8n/pedidos'
+      path: '/api/integrations/n8n/pedidos'
+      fullPath: '/api/integrations/n8n/pedidos'
+      preLoaderRoute: typeof ApiIntegrationsN8nPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/n8n/pedidos/status': {
+      id: '/api/integrations/n8n/pedidos/status'
+      path: '/status'
+      fullPath: '/api/integrations/n8n/pedidos/status'
+      preLoaderRoute: typeof ApiIntegrationsN8nPedidosStatusRouteImport
+      parentRoute: typeof ApiIntegrationsN8nPedidosRoute
+    }
   }
 }
 
@@ -326,6 +388,20 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ApiIntegrationsN8nPedidosRouteChildren {
+  ApiIntegrationsN8nPedidosStatusRoute: typeof ApiIntegrationsN8nPedidosStatusRoute
+}
+
+const ApiIntegrationsN8nPedidosRouteChildren: ApiIntegrationsN8nPedidosRouteChildren =
+  {
+    ApiIntegrationsN8nPedidosStatusRoute: ApiIntegrationsN8nPedidosStatusRoute,
+  }
+
+const ApiIntegrationsN8nPedidosRouteWithChildren =
+  ApiIntegrationsN8nPedidosRoute._addFileChildren(
+    ApiIntegrationsN8nPedidosRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -336,6 +412,8 @@ const rootRouteChildren: RootRouteChildren = {
   PedidoOrderNumberRoute: PedidoOrderNumberRoute,
   ApiPublicProdutosRoute: ApiPublicProdutosRoute,
   ApiWebhooksMercadopagoRoute: ApiWebhooksMercadopagoRoute,
+  ApiIntegrationsN8nCatalogoRoute: ApiIntegrationsN8nCatalogoRoute,
+  ApiIntegrationsN8nPedidosRoute: ApiIntegrationsN8nPedidosRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

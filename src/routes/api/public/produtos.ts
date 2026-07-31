@@ -9,6 +9,7 @@ export const Route = createFileRoute("/api/public/produtos")({
           .from("products")
           .select("id,name,description,price,category,active")
           .eq("active", true)
+          .order("display_order", { ascending: true })
           .order("created_at", { ascending: true });
 
         if (error) {

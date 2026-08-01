@@ -13,7 +13,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { store } from "@/lib/store-info";
 import { formatBRL } from "@/lib/products";
-import { getPassword } from "@/lib/auth";
 import { adminListZones, adminUpsertZone, adminDeleteZone, adminUpdateSetting } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
@@ -23,7 +22,6 @@ type Zone = { id?: string; bairro: string; fee: number; active: boolean };
 
 function Config() {
   const qc = useQueryClient();
-  const password = getPassword();
   const listZonesFn = useServerFn(adminListZones);
   const upsertZoneFn = useServerFn(adminUpsertZone);
   const deleteZoneFn = useServerFn(adminDeleteZone);
@@ -31,12 +29,13 @@ function Config() {
 
   const [editing, setEditing] = useState<Zone | null>(null);
   const [deleting, setDeleting] = useState<Zone | null>(null);
+  const [senhaAtual, setSenhaAtual] = useState("");
   const [newPw, setNewPw] = useState("");
   const [savingPw, setSavingPw] = useState(false);
 
   const { data: zones = [], isLoading } = useQuery({
     queryKey: ["admin-zones"],
-    queryFn: () => listZonesFn({ data: { password } }) as Promise<Zone[]>,
+    queryFn: () => listZonesFn({}) as Promise<Zone[]>,
   });
 
   function refresh() {
@@ -46,7 +45,7 @@ function Config() {
 
   async function saveZone(z: Zone) {
     try {
-      await upsertZoneFn({ data: { password, zone: { id: z.id, bairro: z.bairro, fee: Number(z.fee), active: z.active } } });
+      await upsertZoneFn({ data: { zone: { id: z.id, bairro: z.bairro, fee: Number(z.fee), active: z.active } } });
       toast.success(z.id ? "Bairro atualizado" : "Bairro adicionado");
       setEditing(null);
       refresh();
@@ -57,7 +56,7 @@ function Config() {
 
   async function removeZone(z: Zone) {
     try {
-      if (z.id) await deleteZoneFn({ data: { password, id: z.id } });
+      if (z.id) await deleteZoneFn({ data: { id: z.id } });
       toast.success(`Bairro "${z.bairro}" removido`);
       setDeleting(null);
       refresh();
@@ -67,15 +66,22 @@ function Config() {
   }
 
   async function changePassword() {
+    if (!senhaAtual) {
+      toast.error("Digite a senha atual para confirmar.");
+      return;
+    }
     if (newPw.length < 8) {
       toast.error("Senha muito curta (mínimo 8 caracteres).");
       return;
     }
     setSavingPw(true);
     try {
-      await updateSettingFn({ data: { password, key: "admin_password", value: newPw } });
+      await updateSettingFn({
+        data: { key: "admin_password", value: newPw, senhaAtual },
+      });
       toast.success("Senha do admin atualizada. Ela valerá no próximo login.");
       setNewPw("");
+      setSenhaAtual("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao atualizar senha");
     } finally {
@@ -132,8 +138,24 @@ function Config() {
         <p className="text-sm text-muted-foreground">Alterar a senha de acesso ao painel.</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div>
+            <Label>Senha atual</Label>
+            <Input
+              type="password"
+              autoComplete="current-password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              className="mt-1 w-56"
+            />
+          </div>
+          <div>
             <Label>Nova senha (mín. 8 caracteres)</Label>
-            <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className="mt-1 w-64" />
+            <Input
+              type="password"
+              autoComplete="new-password"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              className="mt-1 w-64"
+            />
           </div>
           <Button onClick={changePassword} disabled={savingPw} className="bg-rose-deep text-primary-foreground">
             {savingPw ? "Salvando…" : "Atualizar senha"}

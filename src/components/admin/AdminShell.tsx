@@ -1,7 +1,8 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Flower2, Menu } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { logout } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { adminLogout } from "@/lib/admin.functions";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,19 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
+  const logoutFn = useServerFn(adminLogout);
+
+  // Sair tem que apagar o cookie no SERVIDOR: como a sessão mora inteira
+  // nele, limpar qualquer coisa só no cliente deixaria a sessão viva para
+  // quem reabrisse a aba.
+  async function sair() {
+    try {
+      await logoutFn({});
+    } finally {
+      navigate({ to: "/admin" });
+      location.reload();
+    }
+  }
 
   const NavList = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
@@ -57,7 +71,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
         </nav>
         <div className="border-t border-sidebar-border p-3">
           <button
-            onClick={() => { logout(); navigate({ to: "/admin" }); location.reload(); }}
+            onClick={sair}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
           >
             <LogOut className="h-4 w-4" /> Sair
@@ -86,7 +100,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
                 </nav>
                 <div className="border-t border-sidebar-border p-3">
                   <button
-                    onClick={() => { setOpen(false); logout(); navigate({ to: "/admin" }); location.reload(); }}
+                    onClick={() => { setOpen(false); void sair(); }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   >
                     <LogOut className="h-4 w-4" /> Sair

@@ -15,7 +15,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Power, Trash2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import { categories, formatBRL, type Category } from "@/lib/products";
-import { getPassword } from "@/lib/auth";
 import {
   adminListProducts,
   adminUpsertProduct,
@@ -44,7 +43,6 @@ function emptyProduct(): AdminProduct {
 
 function ProdutosAdmin() {
   const qc = useQueryClient();
-  const password = getPassword();
   const listFn = useServerFn(adminListProducts);
   const upsertFn = useServerFn(adminUpsertProduct);
   const deleteFn = useServerFn(adminDeleteProduct);
@@ -59,7 +57,7 @@ function ProdutosAdmin() {
 
   const { data: list = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => listFn({ data: { password } }) as Promise<AdminProduct[]>,
+    queryFn: () => listFn({}) as Promise<AdminProduct[]>,
   });
 
   function refresh() {
@@ -71,7 +69,6 @@ function ProdutosAdmin() {
     try {
       await upsertFn({
         data: {
-          password,
           product: {
             id: p.id,
             name: p.name,
@@ -93,7 +90,7 @@ function ProdutosAdmin() {
 
   async function toggle(p: AdminProduct) {
     try {
-      await upsertFn({ data: { password, product: { ...p, active: !p.active } } });
+      await upsertFn({ data: { product: { ...p, active: !p.active } } });
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao atualizar");
@@ -102,7 +99,7 @@ function ProdutosAdmin() {
 
   async function remove(p: AdminProduct) {
     try {
-      if (p.id) await deleteFn({ data: { password, id: p.id } });
+      if (p.id) await deleteFn({ data: { id: p.id } });
       toast.success(`Produto "${p.name}" excluído`);
       setDeleting(null);
       refresh();
@@ -120,7 +117,7 @@ function ProdutosAdmin() {
     if (index + dir < 0 || index + dir >= list.length) return;
     setReordering(true);
     try {
-      await moveFn({ data: { password, id: alvo.id, direcao: dir === -1 ? "cima" : "baixo" } });
+      await moveFn({ data: { id: alvo.id, direcao: dir === -1 ? "cima" : "baixo" } });
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao reordenar");
@@ -141,7 +138,7 @@ function ProdutosAdmin() {
         reader.readAsDataURL(file);
       });
       const res = await uploadFn({
-        data: { password, fileName: file.name, contentType: file.type, base64 },
+        data: { fileName: file.name, contentType: file.type, base64 },
       });
       setEditing({ ...editing, image_url: res.url });
       toast.success("Imagem enviada");

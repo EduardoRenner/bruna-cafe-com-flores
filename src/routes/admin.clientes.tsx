@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Card } from "@/components/ui/card";
 import { formatBRL } from "@/lib/products";
-import { getPassword } from "@/lib/auth";
 import { adminListOrders } from "@/lib/admin.functions";
 import type { OrderRow } from "@/lib/orders";
 
@@ -52,12 +51,11 @@ function agregarClientes(orders: OrderRow[]): Cliente[] {
 }
 
 function Clientes() {
-  const password = getPassword();
   const listFn = useServerFn(adminListOrders);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
-    queryFn: () => listFn({ data: { password } }) as Promise<OrderRow[]>,
+    queryFn: () => listFn({}) as Promise<OrderRow[]>,
   });
 
   const clientes = useMemo(() => agregarClientes(orders), [orders]);

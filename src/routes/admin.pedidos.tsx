@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Trash2, Printer, Download, CalendarClock } from "lucide-react";
 import { formatBRL } from "@/lib/products";
-import { getPassword } from "@/lib/auth";
 import { adminListOrders, adminUpdateOrderStatus, adminUpdatePaymentStatus, adminDeleteOrder } from "@/lib/admin.functions";
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS, type OrderRow, type OrderStatus, type PaymentStatus } from "@/lib/orders";
 import { downloadOrderPDF, printOrderPDF } from "@/lib/order-pdf";
@@ -68,7 +67,6 @@ function addressToText(addr: unknown): string {
 
 function PedidosAdmin() {
   const qc = useQueryClient();
-  const password = getPassword();
   const listFn = useServerFn(adminListOrders);
   const statusFn = useServerFn(adminUpdateOrderStatus);
   const paymentFn = useServerFn(adminUpdatePaymentStatus);
@@ -82,7 +80,7 @@ function PedidosAdmin() {
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
-    queryFn: () => listFn({ data: { password } }) as Promise<OrderRow[]>,
+    queryFn: () => listFn({}) as Promise<OrderRow[]>,
   });
 
   const list = useMemo(() => {
@@ -100,7 +98,7 @@ function PedidosAdmin() {
 
   async function updateStatus(o: OrderRow, status: string) {
     try {
-      await statusFn({ data: { password, id: o.id, status } });
+      await statusFn({ data: { id: o.id, status } });
       toast.success("Status atualizado");
       qc.invalidateQueries({ queryKey: ["admin-orders"] });
       setSel((prev) => (prev && prev.id === o.id ? { ...prev, status } : prev));
@@ -111,7 +109,7 @@ function PedidosAdmin() {
 
   async function updatePayment(o: OrderRow, payment_status: string) {
     try {
-      await paymentFn({ data: { password, id: o.id, payment_status } });
+      await paymentFn({ data: { id: o.id, payment_status } });
       toast.success("Pagamento atualizado");
       qc.invalidateQueries({ queryKey: ["admin-orders"] });
       setSel((prev) => (prev && prev.id === o.id ? { ...prev, payment_status } : prev));
@@ -122,7 +120,7 @@ function PedidosAdmin() {
 
   async function removeOrder(o: OrderRow) {
     try {
-      await deleteFn({ data: { password, id: o.id } });
+      await deleteFn({ data: { id: o.id } });
       toast.success(`Pedido ${o.order_number} excluído`);
       setDeleting(null);
       setSel(null);

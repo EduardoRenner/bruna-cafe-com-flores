@@ -5,31 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Flower2, Lock } from "lucide-react";
-import { getPassword, isAuthed, logout, setSession } from "@/lib/auth";
-import { adminLogin } from "@/lib/admin.functions";
+import { adminLogin, adminSessaoAtiva } from "@/lib/admin.functions";
 
 export function LoginGate({ children }: { children: ReactNode }) {
-  // Começa não-autenticado até o servidor confirmar a senha guardada. Isso
-  // impede o bypass onde alguém seta o flag em sessionStorage pelo devtools.
+  // Quem manda é sempre o SERVIDOR: ao montar, perguntamos se o cookie
+  // httpOnly de sessão é válido. Não existe estado local que conceda acesso
+  // — não há o que forjar no devtools, e toda server function confere o
+  // cookie por conta própria de qualquer forma.
   const [authed, setAuthed] = useState(false);
-  const [verifying, setVerifying] = useState(() => isAuthed() && getPassword().length > 0);
+  const [verifying, setVerifying] = useState(true);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const loginFn = useServerFn(adminLogin);
+  const sessaoFn = useServerFn(adminSessaoAtiva);
 
   useEffect(() => {
     let cancelled = false;
-    if (!verifying) return;
     (async () => {
       try {
-        await loginFn({ data: { password: getPassword() } });
-        if (!cancelled) setAuthed(true);
+        const { ativa } = await sessaoFn({});
+        if (!cancelled) setAuthed(ativa);
       } catch {
-        if (!cancelled) {
-          logout();
-          setAuthed(false);
-        }
+        if (!cancelled) setAuthed(false);
       } finally {
         if (!cancelled) setVerifying(false);
       }
@@ -37,7 +35,7 @@ export function LoginGate({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [verifying, loginFn]);
+  }, [sessaoFn]);
 
   if (authed) return <>{children}</>;
   if (verifying) {
@@ -53,8 +51,10 @@ export function LoginGate({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
+      // O servidor confere a senha e devolve o cookie httpOnly de sessão.
+      // A senha não é guardada em lugar nenhum do lado do cliente.
       await loginFn({ data: { password } });
-      setSession(password);
+      setPassword("");
       setAuthed(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Senha incorreta.");

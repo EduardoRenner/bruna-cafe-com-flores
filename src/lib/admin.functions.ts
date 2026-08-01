@@ -28,18 +28,47 @@ async function verifyAdmin(password: string) {
   return supabaseAdmin;
 }
 
+/**
+ * Porteiro de toda ação do painel.
+ *
+ * Confere o cookie de sessão (httpOnly, assinado, com validade) em vez de
+ * reconferir a senha a cada chamada. A senha só trafega no login e na troca
+ * de senha — em mais lugar nenhum.
+ */
+async function exigirSessao() {
+  const { sessaoAdminValida } = await import("@/lib/admin-session.server");
+  if (!(await sessaoAdminValida())) {
+    throw new Error("Sessão expirada. Entre novamente.");
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
     await verifyAdmin(data.password);
+    const { criarSessaoAdmin } = await import("@/lib/admin-session.server");
+    await criarSessaoAdmin();
     return { ok: true as const };
   });
 
+export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
+  const { encerrarSessaoAdmin } = await import("@/lib/admin-session.server");
+  await encerrarSessaoAdmin();
+  return { ok: true as const };
+});
+
+/** O painel pergunta isto ao montar, para saber se já há sessão válida. */
+export const adminSessaoAtiva = createServerFn({ method: "POST" }).handler(async () => {
+  const { sessaoAdminValida } = await import("@/lib/admin-session.server");
+  return { ativa: await sessaoAdminValida() };
+});
+
 // -------------------------------- PEDIDOS -----------------------------------
 export const adminListOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { data: orders, error } = await admin
       .from("orders")
       .select("*")
@@ -50,18 +79,18 @@ export const adminListOrders = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string; status: string }) => data)
+  .inputValidator((data: { id: string; status: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { error } = await admin.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
 export const adminUpdatePaymentStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string; payment_status: string }) => data)
+  .inputValidator((data: { id: string; payment_status: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     if (!["pendente", "pago", "estornado"].includes(data.payment_status)) {
       throw new Error("Status de pagamento inválido");
     }
@@ -74,9 +103,9 @@ export const adminUpdatePaymentStatus = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string }) => data)
+  .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { error } = await admin.from("orders").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -84,9 +113,8 @@ export const adminDeleteOrder = createServerFn({ method: "POST" })
 
 // ------------------------------- PRODUTOS -----------------------------------
 export const adminListProducts = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { data: products, error } = await admin
       .from("products")
       .select("*")
@@ -99,7 +127,6 @@ export const adminListProducts = createServerFn({ method: "POST" })
 export const adminUpsertProduct = createServerFn({ method: "POST" })
   .inputValidator(
     (data: {
-      password: string;
       product: {
         id?: string;
         name: string;
@@ -112,7 +139,7 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
     }) => data,
   )
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const p = data.product;
     const payload = {
       name: p.name,
@@ -155,9 +182,9 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
  * que o problema não volte, seja qual for a origem dos dados.
  */
 export const adminMoveProductOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string; direcao: "cima" | "baixo" }) => data)
+  .inputValidator((data: { id: string; direcao: "cima" | "baixo" }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
 
     // Mesma ordenação que o admin e o catálogo público exibem.
     const { data: rows, error: erroLeitura } = await admin
@@ -186,9 +213,9 @@ export const adminMoveProductOrder = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteProduct = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string }) => data)
+  .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { error } = await admin.from("products").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -196,10 +223,10 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 
 export const adminUploadProductImage = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: { password: string; fileName: string; contentType: string; base64: string }) => data,
+    (data: { fileName: string; contentType: string; base64: string }) => data,
   )
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
 
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(data.contentType)) {
@@ -226,9 +253,8 @@ export const adminUploadProductImage = createServerFn({ method: "POST" })
 
 // ---------------------------- FRETE POR BAIRRO ------------------------------
 export const adminListZones = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { data: zones, error } = await admin
       .from("delivery_zones")
       .select("*")
@@ -240,12 +266,11 @@ export const adminListZones = createServerFn({ method: "POST" })
 export const adminUpsertZone = createServerFn({ method: "POST" })
   .inputValidator(
     (data: {
-      password: string;
       zone: { id?: string; bairro: string; fee: number; active: boolean };
     }) => data,
   )
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const z = data.zone;
     if (!z.bairro?.trim()) throw new Error("Informe o nome do bairro");
     if (!(z.fee >= 0)) throw new Error("Valor de frete inválido");
@@ -258,9 +283,9 @@ export const adminUpsertZone = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteZone = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string }) => data)
+  .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { error } = await admin.from("delivery_zones").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -268,9 +293,8 @@ export const adminDeleteZone = createServerFn({ method: "POST" })
 
 // ------------------------------ CONFIGURAÇÕES -------------------------------
 export const adminListSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     const { data: rows, error } = await admin
       .from("settings")
       .select("*")
@@ -280,14 +304,25 @@ export const adminListSettings = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateSetting = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; key: string; value: unknown }) => data)
+  .inputValidator((data: { key: string; value: unknown; senhaAtual?: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
     if (data.key === "admin_password") {
+      // Trocar a senha exige digitar a senha ATUAL, mesmo já tendo sessão.
+      // Sem isso, quem chegasse numa aba de admin aberta (ou sequestrasse a
+      // sessão) trocaria a senha e trancaria a dona para fora da própria loja.
+      // Passa pelo verify_admin_login, então também herda o rate limit por IP.
+      await verifyAdmin(String(data.senhaAtual ?? ""));
+
       const newPw = typeof data.value === "string" ? data.value : "";
       if (newPw.length < 8) throw new Error("Senha muito curta (mínimo 8 caracteres)");
       const { error } = await admin.rpc("set_admin_password", { _new_password: newPw });
       if (error) throw new Error(error.message);
+
+      // A senha mudou: a sessão atual continua válida (quem trocou é a dona),
+      // mas o cookie é reemitido para renovar o prazo.
+      const { criarSessaoAdmin } = await import("@/lib/admin-session.server");
+      await criarSessaoAdmin();
       return { ok: true as const };
     }
     const { error } = await admin
@@ -320,9 +355,8 @@ type OrderRow = { total: number; status: string; items: unknown; created_at: str
 type OrderItem = { name?: string; quantity?: number };
 
 export const adminStats = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const admin = await verifyAdmin(data.password);
+    const admin = await exigirSessao();
 
     const startOfDay = spStartOf("day");
     const startOfYear = spStartOf("year");

@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, DollarSign, Package, Clock } from "lucide-react";
 import { formatBRL } from "@/lib/products";
-import { getPassword } from "@/lib/auth";
 import { adminStats } from "@/lib/admin.functions";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
@@ -16,11 +15,10 @@ const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "
 const COLORS = ["oklch(0.78 0.09 5)", "oklch(0.6 0.14 10)", "oklch(0.72 0.08 145)", "oklch(0.65 0.12 65)", "oklch(0.38 0.07 55)"];
 
 function Dashboard() {
-  const password = getPassword();
   const statsFn = useServerFn(adminStats);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-stats"],
-    queryFn: () => statsFn({ data: { password } }),
+    queryFn: () => statsFn({}),
   });
 
   const kpis = [

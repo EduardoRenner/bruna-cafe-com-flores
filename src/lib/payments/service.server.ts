@@ -8,6 +8,7 @@
 //   3. Notificação repetida não gera efeito repetido.
 //   4. Valor divergente nunca vira "pago" sozinho.
 
+import { FORMAS_ONLINE } from "@/lib/orders/createOrderCore.server";
 import { store } from "@/lib/store-info";
 import { getPaymentConfig } from "./config.server";
 import { createMercadoPagoProvider } from "./mercadopago.server";
@@ -36,9 +37,27 @@ function getProvider(): { provider: PaymentProvider; siteUrl: string } | null {
 /** Teto de tentativas por pedido, para o endpoint não virar gerador infinito de cobranças. */
 const MAX_TENTATIVAS_POR_PEDIDO = 10;
 
+/**
+ * Intervalo mínimo entre duas consultas ao gateway para o mesmo pagamento.
+ *
+ * Menor que o polling da página (5s) seria inútil; muito maior atrasaria a
+ * confirmação que o cliente está esperando na tela. 10s deixa a página
+ * resolver em uma ou duas atualizações e corta a rajada.
+ */
+const INTERVALO_RECONCILIACAO_MS = 10_000;
+
 export type CriarPagamentoResultado =
   | { ok: true; redirectUrl: string }
-  | { ok: false; motivo: "desligado" | "pedido_invalido" | "ja_pago" | "excesso_tentativas" | "falha_gateway" };
+  | {
+      ok: false;
+      motivo:
+        | "desligado"
+        | "pedido_invalido"
+        | "ja_pago"
+        | "excesso_tentativas"
+        | "falha_gateway"
+        | "forma_nao_online";
+    };
 
 /**
  * Cria um checkout para um pedido existente.
@@ -57,13 +76,23 @@ export async function criarPagamentoParaPedido(
 
   const { data: pedido, error: erroPedido } = await supabaseAdmin
     .from("orders")
-    .select("id, order_number, total, status, payment_status, customer_name, customer_email")
+    .select(
+      "id, order_number, total, status, payment_status, customer_name, customer_email, payment_method",
+    )
     .eq("public_token", orderPublicToken)
     .maybeSingle();
 
   if (erroPedido || !pedido) return { ok: false, motivo: "pedido_invalido" };
   if (pedido.payment_status === "pago") return { ok: false, motivo: "ja_pago" };
   if (pedido.status === "cancelado") return { ok: false, motivo: "pedido_invalido" };
+
+  // Dinheiro é acerto na entrega, não cobrança. Mesmo que alguém chame este
+  // endpoint direto com o token de um pedido em dinheiro, não abrimos cobrança
+  // — senão o cliente pagaria online um pedido que ele vai pagar de novo na
+  // porta, e a loja teria de estornar.
+  if (!(FORMAS_ONLINE as readonly string[]).includes(pedido.payment_method)) {
+    return { ok: false, motivo: "forma_nao_online" };
+  }
 
   const { count } = await supabaseAdmin
     .from("payments")
@@ -103,6 +132,7 @@ export async function criarPagamentoParaPedido(
         name: pedido.customer_name,
         email: pedido.customer_email,
       },
+      paymentMethod: pedido.payment_method,
       returnUrl: `${p.siteUrl}/pedido/${orderPublicToken}`,
       notificationUrl: `${p.siteUrl}/api/webhooks/mercadopago`,
     });
@@ -372,13 +402,29 @@ async function reconciliar(
 
   // Só tentativas ainda em aberto. Uma recusada continua recusada; reconsultar
   // todas transformaria cada visita à página numa rajada de chamadas.
+  //
+  // O corte por last_reconciled_at é o freio: a página do pedido é pública
+  // para quem tem o token, e sem ele um laço de requisições viraria uma
+  // rajada contra a API do gateway — derrubando o pagamento para todo mundo.
+  const limite = new Date(Date.now() - INTERVALO_RECONCILIACAO_MS).toISOString();
   const { data: pagamentos } = await supabaseAdmin
     .from("payments")
     .select("id")
     .eq("order_id", pedido.id)
-    .eq("status", "iniciado");
+    .eq("status", "iniciado")
+    .or(`last_reconciled_at.is.null,last_reconciled_at.lt.${limite}`);
 
   if (!pagamentos || pagamentos.length === 0) return "sem_mudanca";
+
+  // Marca ANTES de consultar. Se marcasse depois, duas requisições simultâneas
+  // passariam as duas pelo filtro e o freio não seguraria nada.
+  await supabaseAdmin
+    .from("payments")
+    .update({ last_reconciled_at: new Date().toISOString() })
+    .in(
+      "id",
+      pagamentos.map((p) => p.id),
+    );
 
   try {
     for (const pagamento of pagamentos) {

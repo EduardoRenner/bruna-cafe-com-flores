@@ -102,6 +102,30 @@ Além disso:
 - **Links de pedido usam token aleatório**, não o número sequencial — senão
   bastaria trocar `BCF-1000` por `BCF-1001` na URL para ler o pedido dos outros.
 
+## Formas de pagamento
+
+A escolha no checkout decide o que o cliente vê no gateway:
+
+| Escolha | Efeito |
+|---|---|
+| Cartão | Checkout do MP só com crédito e débito |
+| Pix | Só Pix |
+| Boleto | Só boleto |
+| Dinheiro | **Não** oferece pagamento online; mostra "Troco para quanto?" e finaliza pelo WhatsApp |
+
+A restrição é por exclusão (`payment_methods.excluded_payment_types`) porque a
+API do Mercado Pago não tem "inclua só isto". Forma desconhecida não restringe
+nada — melhor oferecer meios demais do que travar um cliente fora do pagamento
+por um valor inesperado no banco.
+
+Dinheiro é recusado no servidor também (`forma_nao_online`), não só escondido
+na tela: senão bastaria chamar o endpoint com o token para cobrar online um
+pedido que o cliente vai pagar de novo na porta.
+
+O troco é validado no **trigger do banco** (≥ total, e com teto contra erro de
+digitação), não só no navegador — o agente de WhatsApp e a API do n8n criam
+pedido pelo mesmo caminho e não passam pela tela.
+
 ## O que acontece quando o pagamento é confirmado
 
 Três coisas, todas a partir do mesmo ponto (`aplicarConfirmacao`), para que

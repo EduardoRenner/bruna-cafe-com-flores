@@ -93,6 +93,7 @@ export type Database = {
           mp_preference_id: string | null
           notes: string | null
           order_number: string
+          change_for: number | null
           payment_method: string
           payment_provider: string | null
           payment_status: string
@@ -116,6 +117,7 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number: string
+          change_for?: number | null
           payment_method: string
           payment_provider?: string | null
           payment_status?: string
@@ -139,6 +141,7 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number?: string
+          change_for?: number | null
           payment_method?: string
           payment_provider?: string | null
           payment_status?: string
@@ -204,6 +207,7 @@ export type Database = {
           id: string
           method: string | null
           order_id: string
+          last_reconciled_at: string | null
           paid_at: string | null
           provider: string
           provider_payment_id: string | null
@@ -219,6 +223,7 @@ export type Database = {
           id?: string
           method?: string | null
           order_id: string
+          last_reconciled_at?: string | null
           paid_at?: string | null
           provider: string
           provider_payment_id?: string | null
@@ -234,6 +239,7 @@ export type Database = {
           id?: string
           method?: string | null
           order_id?: string
+          last_reconciled_at?: string | null
           paid_at?: string | null
           provider?: string
           provider_payment_id?: string | null

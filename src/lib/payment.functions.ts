@@ -15,6 +15,8 @@ const MENSAGENS: Record<string, string> = {
   desligado: "Pagamento online indisponível no momento. Finalize pelo WhatsApp.",
   pedido_invalido: "Não foi possível localizar este pedido.",
   ja_pago: "Este pedido já está pago.",
+  forma_nao_online:
+    "Este pedido foi feito para pagamento em dinheiro na entrega. Para pagar online, faça um novo pedido escolhendo Pix, cartão ou boleto.",
   excesso_tentativas:
     "Muitas tentativas de pagamento para este pedido. Fale com a loja pelo WhatsApp.",
   falha_gateway:

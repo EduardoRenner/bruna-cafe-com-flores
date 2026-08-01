@@ -405,9 +405,19 @@ describe("createCheckout", () => {
     amountCents: 6000,
     description: "Pedido BCF-1000",
     payer: { name: "Fulana", email: "fulana@exemplo.com" },
+    paymentMethod: "cartao",
     returnUrl: "https://loja.exemplo.com.br/pedido/tok",
     notificationUrl: "https://loja.exemplo.com.br/api/webhooks/mercadopago",
   };
+
+  /** Tipos que o cliente ainda verá, dado o que foi excluído. */
+  function tiposOferecidos(corpoJson: string): string[] {
+    const todos = ["credit_card", "debit_card", "ticket", "bank_transfer", "account_money"];
+    const excluidos: string[] = (
+      JSON.parse(corpoJson).payment_methods?.excluded_payment_types ?? []
+    ).map((t: { id: string }) => t.id);
+    return todos.filter((t) => !excluidos.includes(t));
+  }
 
   it("manda o valor em reais, a partir dos centavos que são nossa fonte de verdade", async () => {
     const corpos = responderPreferencia();
@@ -449,6 +459,30 @@ describe("createCheckout", () => {
     });
     const corpo = JSON.parse(corpos[0]);
     expect(corpo.payer).not.toHaveProperty("email");
+  });
+
+  it.each([
+    ["cartao", ["credit_card", "debit_card"]],
+    ["pix", ["bank_transfer"]],
+    ["boleto", ["ticket"]],
+  ])("forma %s abre só %s no gateway", async (forma, esperados) => {
+    const corpos = responderPreferencia();
+    await provider.createCheckout({ ...entrada, paymentMethod: forma });
+    expect(tiposOferecidos(corpos[0]).sort()).toEqual([...esperados].sort());
+  });
+
+  it("forma desconhecida não restringe nada, em vez de travar o cliente fora", async () => {
+    // Um valor inesperado no banco não pode virar checkout sem meio nenhum.
+    const corpos = responderPreferencia();
+    await provider.createCheckout({ ...entrada, paymentMethod: "vale_refeicao" });
+    expect(JSON.parse(corpos[0]).payment_methods).toBeUndefined();
+  });
+
+  it("dinheiro nunca chega aqui, mas se chegasse não abriria meio nenhum indevido", async () => {
+    // Defesa em profundidade: o serviço já recusa 'dinheiro' antes de chamar.
+    const corpos = responderPreferencia();
+    await provider.createCheckout({ ...entrada, paymentMethod: "dinheiro" });
+    expect(JSON.parse(corpos[0]).payment_methods).toBeUndefined();
   });
 
   it("o log de diagnóstico não vaza o access token nem o e-mail inteiro", async () => {

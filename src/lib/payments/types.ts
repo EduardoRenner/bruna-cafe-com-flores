@@ -50,6 +50,13 @@ export type CreateCheckoutInput = {
   amountCents: number;
   description: string;
   payer: { name: string; email: string | null };
+  /**
+   * Forma escolhida no checkout: 'pix' | 'cartao' | 'boleto'.
+   *
+   * O gateway abre só o meio correspondente. Sem isto o cliente escolhe
+   * "Pix" no site e cai numa tela pedindo cartão — e desiste.
+   */
+  paymentMethod: string;
   /** Para onde o gateway devolve o cliente depois de pagar. */
   returnUrl: string;
   /** Onde o gateway avisa o resultado, servidor a servidor. */

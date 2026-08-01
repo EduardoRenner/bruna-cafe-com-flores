@@ -31,6 +31,8 @@ export interface OrderRow {
   delivery_date: string | null;
   delivery_time: string | null;
   payment_method: string;
+  /** "Troco para quanto", em reais. Só preenchido quando o pagamento é em dinheiro. */
+  change_for?: number | null;
   notes: string | null;
   status: string;
   payment_status?: string;

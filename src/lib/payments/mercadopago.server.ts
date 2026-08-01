@@ -54,6 +54,44 @@ function paraCentavos(valor: number): number {
   return Math.round(valor * 100);
 }
 
+/**
+ * Tipos de meio de pagamento do Mercado Pago no Brasil.
+ *
+ * `bank_transfer` é o Pix; `ticket` é o boleto; `account_money` é o saldo da
+ * conta MP. Restringir é por EXCLUSÃO: a API não tem "inclua só isto".
+ */
+const TODOS_OS_TIPOS = [
+  "credit_card",
+  "debit_card",
+  "ticket",
+  "bank_transfer",
+  "account_money",
+] as const;
+
+/** Quais tipos do gateway correspondem a cada forma escolhida no site. */
+const TIPOS_POR_FORMA: Record<string, readonly string[]> = {
+  cartao: ["credit_card", "debit_card"],
+  pix: ["bank_transfer"],
+  boleto: ["ticket"],
+};
+
+/**
+ * Monta a restrição de meios para a preferência.
+ *
+ * Forma desconhecida devolve `undefined` — ou seja, nenhuma restrição, o
+ * checkout completo. Melhor oferecer meios demais do que travar um cliente
+ * fora do pagamento por causa de um valor inesperado no banco.
+ */
+function restringirMeios(forma: string): { excluded_payment_types: { id: string }[] } | undefined {
+  const permitidos = TIPOS_POR_FORMA[forma];
+  if (!permitidos) return undefined;
+  return {
+    excluded_payment_types: TODOS_OS_TIPOS.filter(
+      (t) => !permitidos.includes(t),
+    ).map((id) => ({ id })),
+  };
+}
+
 /** Formato do pagamento na API do Mercado Pago, igual na consulta e na busca. */
 type RespPagamento = {
   id: number | string;
@@ -172,6 +210,9 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
           },
           auto_return: "approved",
           statement_descriptor: "BRUNACAFEFLORES",
+          ...(restringirMeios(input.paymentMethod)
+            ? { payment_methods: restringirMeios(input.paymentMethod) }
+            : {}),
         }),
       });
 

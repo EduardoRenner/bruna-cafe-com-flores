@@ -88,20 +88,24 @@ export function descreverConfigParaLog(
   };
 }
 
-/** Domínios que só existem em preview/desenvolvimento. */
-const HOSTS_NAO_PRODUCAO = /(^|\.)(localhost|vercel\.app|ngrok(-free)?\.app)$/;
-
 /**
- * Incoerências que costumam causar "uma das partes é de teste" no checkout.
+ * Incoerências de configuração, para log de servidor.
  *
- * Devolve avisos em vez de lançar: uma combinação estranha ainda pode ser
- * intencional (testar sandbox contra o domínio real, por exemplo), e derrubar
- * o checkout por heurística seria pior do que o problema.
+ * Deliberadamente NÃO adivinha o ambiente pelo formato do domínio. A primeira
+ * versão disto tratava todo `*.vercel.app` como preview e acusava a própria
+ * produção deste projeto — que não tem domínio próprio — de estar incoerente.
+ * Um aviso que dispara sempre vira ruído e deixa de ser lido. Aqui só entram
+ * checagens que o Vercel responde com certeza, pelas variáveis que ele injeta
+ * em cada deploy.
+ *
+ * Devolve avisos em vez de lançar: combinação estranha ainda pode ser
+ * intencional, e derrubar o checkout por heurística seria pior que o problema.
  */
 export function verificarCoerenciaAmbiente(cfg: PaymentConfig): string[] {
   const avisos: string[] = [];
   const host = new URL(cfg.siteUrl).hostname;
-  const hostDeProducao = !HOSTS_NAO_PRODUCAO.test(host);
+  const vercelEnv = process.env.VERCEL_ENV;
+  const hostDeProducao = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 
   if (cfg.tokenEnvironment === "desconhecido") {
     avisos.push(
@@ -109,19 +113,27 @@ export function verificarCoerenciaAmbiente(cfg: PaymentConfig): string[] {
         "estar truncado ou não ser um access token do Mercado Pago.",
     );
   }
-  if (cfg.tokenEnvironment === "teste" && hostDeProducao) {
+
+  if (vercelEnv === "production" && cfg.tokenEnvironment === "teste") {
     avisos.push(
-      `Token de TESTE (TEST-) rodando no domínio de produção ${host}. ` +
-        "Um comprador real não consegue pagar num checkout de teste.",
+      "Deploy de PRODUÇÃO rodando com credencial de teste (TEST-). Nenhum " +
+        "cliente real consegue pagar — o checkout recusa comprador real " +
+        "contra vendedor de teste.",
     );
   }
-  if (cfg.tokenEnvironment === "producao" && !hostDeProducao) {
+
+  // O caso que já nos mordeu: a preview monta returnUrl e notificationUrl a
+  // partir de SITE_URL, então SITE_URL apontando para produção faz o webhook
+  // do teste cair no site real, que roda outro código e outros segredos.
+  if (vercelEnv === "preview" && hostDeProducao && host === hostDeProducao) {
     avisos.push(
-      `Token APP_USR- rodando em ${host} (preview/local). Se a intenção era ` +
-        "sandbox, confirme se este token é de um usuário de teste — usuário " +
-        "de teste também usa prefixo APP_USR-.",
+      `Deploy de PREVIEW com SITE_URL apontando para o domínio de produção ` +
+        `(${host}). O retorno do pagamento e o webhook deste teste vão para o ` +
+        `site real, não para esta preview. Defina SITE_URL no escopo Preview ` +
+        `e redeploy — variável de ambiente não entra em deploy já existente.`,
     );
   }
+
   return avisos;
 }
 

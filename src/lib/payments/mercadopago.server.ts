@@ -53,6 +53,27 @@ function paraCentavos(valor: number): number {
   return Math.round(valor * 100);
 }
 
+/** Formato do pagamento na API do Mercado Pago, igual na consulta e na busca. */
+type RespPagamento = {
+  id: number | string;
+  status: string;
+  status_detail?: string;
+  transaction_amount: number;
+  external_reference?: string | null;
+  payment_method_id?: string | null;
+};
+
+function traduzirPagamento(p: RespPagamento): GatewayPayment {
+  return {
+    providerPaymentId: String(p.id),
+    status: traduzirStatus(p.status),
+    amountCents: paraCentavos(p.transaction_amount),
+    externalReference: p.external_reference ?? null,
+    method: p.payment_method_id ?? null,
+    statusDetail: p.status_detail ?? null,
+  };
+}
+
 function comparaSegura(a: string, b: string): boolean {
   const ba = Buffer.from(a, "utf8");
   const bb = Buffer.from(b, "utf8");
@@ -174,27 +195,28 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
     },
 
     async fetchPayment(providerPaymentId: string): Promise<GatewayPayment> {
-      type Resp = {
-        id: number | string;
-        status: string;
-        status_detail?: string;
-        transaction_amount: number;
-        external_reference?: string | null;
-        payment_method_id?: string | null;
-      };
-
-      const p = await chamar<Resp>(
+      const p = await chamar<RespPagamento>(
         `/v1/payments/${encodeURIComponent(providerPaymentId)}`,
       );
+      return traduzirPagamento(p);
+    },
 
-      return {
-        providerPaymentId: String(p.id),
-        status: traduzirStatus(p.status),
-        amountCents: paraCentavos(p.transaction_amount),
-        externalReference: p.external_reference ?? null,
-        method: p.payment_method_id ?? null,
-        statusDetail: p.status_detail ?? null,
-      };
+    async findPaymentByReference(
+      externalReference: string,
+    ): Promise<GatewayPayment | null> {
+      type Resp = { results?: RespPagamento[] };
+
+      const busca = await chamar<Resp>(
+        `/v1/payments/search?external_reference=${encodeURIComponent(externalReference)}&sort=date_created&criteria=desc`,
+      );
+      const resultados = busca.results ?? [];
+      if (resultados.length === 0) return null;
+
+      // Uma mesma referência pode ter várias tentativas (cartão recusado e
+      // depois aprovado, por exemplo). O aprovado é o que importa; sem
+      // nenhum aprovado, vale o mais recente.
+      const aprovado = resultados.find((p) => p.status === "approved");
+      return traduzirPagamento(aprovado ?? resultados[0]);
     },
 
     /**

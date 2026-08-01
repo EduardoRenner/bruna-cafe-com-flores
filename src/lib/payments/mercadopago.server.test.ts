@@ -253,6 +253,68 @@ describe("fetchPayment", () => {
   });
 });
 
+describe("findPaymentByReference", () => {
+  function responder(resultados: unknown[]) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ results: resultados }), { status: 200 })),
+    );
+  }
+
+  it("devolve null quando o gateway não conhece a referência", async () => {
+    responder([]);
+    expect(await provider.findPaymentByReference("uuid")).toBeNull();
+  });
+
+  it("devolve null quando a resposta não traz results", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({}), { status: 200 })),
+    );
+    expect(await provider.findPaymentByReference("uuid")).toBeNull();
+  });
+
+  it("prefere o aprovado quando houve tentativa recusada antes", async () => {
+    // Cartão recusado e depois aprovado é fluxo comum. Pegar o mais recente
+    // por engano poderia deixar como recusado um pedido efetivamente pago.
+    responder([
+      { id: 2, status: "rejected", transaction_amount: 60 },
+      { id: 1, status: "approved", transaction_amount: 60 },
+    ]);
+    const p = await provider.findPaymentByReference("uuid");
+    expect(p!.status).toBe("pago");
+    expect(p!.providerPaymentId).toBe("1");
+  });
+
+  it("sem nenhum aprovado, usa o primeiro (o mais recente)", async () => {
+    responder([
+      { id: 9, status: "rejected", transaction_amount: 60 },
+      { id: 8, status: "rejected", transaction_amount: 60 },
+    ]);
+    const p = await provider.findPaymentByReference("uuid");
+    expect(p!.status).toBe("recusado");
+    expect(p!.providerPaymentId).toBe("9");
+  });
+
+  it("aplica a mesma conversão de centavos da consulta direta", async () => {
+    responder([{ id: 1, status: "approved", transaction_amount: 65.1 }]);
+    expect((await provider.findPaymentByReference("uuid"))!.amountCents).toBe(6510);
+  });
+
+  it("manda a referência na query, escapada", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        urls.push(url);
+        return new Response(JSON.stringify({ results: [] }), { status: 200 });
+      }),
+    );
+    await provider.findPaymentByReference("a b/c");
+    expect(urls[0]).toContain("external_reference=a%20b%2Fc");
+  });
+});
+
 describe("createCheckout", () => {
   /** Responde uma preferência e guarda os corpos enviados, já tipados. */
   function responderPreferencia() {

@@ -73,6 +73,18 @@ export interface PaymentProvider {
    * que descubra a URL. Só o que a API confirma vale.
    */
   fetchPayment(providerPaymentId: string): Promise<GatewayPayment>;
+  /**
+   * Procura o pagamento pela NOSSA referência (o `payments.id`).
+   *
+   * Existe porque o webhook não é confiável o bastante para ser o único
+   * caminho: ele pode não chegar (URL errada, notificação perdida) ou chegar e
+   * ser descartado (assinatura inválida). Sem isto, um pagamento aprovado de
+   * verdade ficaria pendente para sempre, sem ninguém perceber.
+   *
+   * Devolve `null` quando o gateway não conhece nenhum pagamento para a
+   * referência — o caso normal de quem abriu o checkout e não pagou.
+   */
+  findPaymentByReference(externalReference: string): Promise<GatewayPayment | null>;
   /** Confere a assinatura do webhook. Retorna false para qualquer dúvida. */
   verifyWebhookSignature(args: {
     signatureHeader: string | null;

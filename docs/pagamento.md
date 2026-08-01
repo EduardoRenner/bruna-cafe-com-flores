@@ -102,6 +102,46 @@ Além disso:
 - **Links de pedido usam token aleatório**, não o número sequencial — senão
   bastaria trocar `BCF-1000` por `BCF-1001` na URL para ler o pedido dos outros.
 
+## O que acontece quando o pagamento é confirmado
+
+Três coisas, todas a partir do mesmo ponto (`aplicarConfirmacao`), para que
+webhook e reconciliação produzam exatamente o mesmo efeito:
+
+1. `payments.status` vira `pago` e `orders.payment_status` também.
+2. **O pedido entra em preparo sozinho** — `orders.status` sai de `pendente`
+   e vai para `em_preparo`. Só avança a partir de `pendente`: uma notificação
+   atrasada nunca puxa de volta um pedido que já saiu para entrega, nem
+   reabre um cancelado. Estorno **não** mexe no status operacional, só no
+   `payment_status` — se o arranjo já foi montado, cancelar sozinho apagaria
+   trabalho real.
+3. **A loja recebe um WhatsApp** com pedido, cliente e valor. Só dispara na
+   confirmação de verdade: notificação reenviada devolve `ja_processado` e
+   não gera segunda mensagem. Falha ao notificar nunca derruba a confirmação
+   — se derrubasse, o gateway reenviaria para sempre e o pedido ficaria
+   pendente por causa de uma mensagem. Destino: `WHATSAPP_NOTIFICACAO_TO`, ou
+   o número da loja em `store-info` se a variável não existir. Precisa do
+   agente de WhatsApp configurado; sem ele, essa etapa é pulada em silêncio.
+
+### Reconciliação: não depender só do webhook
+
+O webhook falha de formas silenciosas — `SITE_URL` apontando para outro
+ambiente, assinatura que não confere, notificação perdida. Em qualquer um
+desses casos um pagamento aprovado de verdade ficaria pendente para sempre.
+
+Por isso a página do pedido (`/pedido/<token>`) pergunta ao Mercado Pago, a
+cada consulta, se o pagamento saiu do lugar — e aplica pelo mesmo caminho do
+webhook. A busca é por `external_reference` (o nosso `payments.id`), então não
+depende de ter recebido nada do gateway. Havendo várias tentativas para o
+mesmo pedido, vale a aprovada.
+
+O polling da página para depois de ~5 minutos: como cada consulta agora chama
+o gateway, uma aba esquecida aberta viraria consulta eterna.
+
+> **Lacuna conhecida:** se o cliente nunca voltar à página do pedido *e* o
+> webhook falhar, ninguém reconcilia. `reconciliarPagamentoDoPedido` está
+> exportada para poder ser chamada por um job periódico, mas esse job ainda
+> não existe.
+
 ## O que tem teste automatizado
 
 `bun run test` (vitest). 64 testes em `src/lib/payments/*.test.ts`:

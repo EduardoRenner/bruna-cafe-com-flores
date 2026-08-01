@@ -41,8 +41,15 @@ function OrderConfirmation() {
     enabled: token,
     // O cliente pode chegar aqui antes do gateway avisar; algumas recargas
     // resolvem sem ele precisar fazer nada.
-    refetchInterval: (q) =>
-      q.state.data?.paymentStatus === "pendente" ? 5000 : false,
+    //
+    // Cada consulta também reconcilia com o gateway, então isto não pode ser
+    // infinito: uma aba esquecida aberta viraria consulta eterna à API do
+    // Mercado Pago. Para depois de ~5 minutos — quem passou disso não vai
+    // resolver recarregando, e o webhook ainda cobre o caso.
+    refetchInterval: (q) => {
+      if (q.state.data?.paymentStatus !== "pendente") return false;
+      return q.state.dataUpdateCount < 60 ? 5000 : false;
+    },
   });
 
   const numeroExibido = pedido?.orderNumber ?? (token ? null : ref);

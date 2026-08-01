@@ -143,6 +143,8 @@ export async function processarWebhook(args: {
   signatureHeader: string | null;
   requestId: string | null;
   dataId: string | null;
+  /** Segundo candidato para o manifesto: corpo e query podem divergir. */
+  dataIdAlternativo?: string | null;
   eventType: string | null;
   payload: unknown;
 }): Promise<WebhookResultado> {
@@ -155,6 +157,7 @@ export async function processarWebhook(args: {
     signatureHeader: args.signatureHeader,
     requestId: args.requestId,
     dataId: args.dataId,
+    dataIdAlternativo: args.dataIdAlternativo ?? null,
   });
 
   // Chave de idempotência. Sem data.id não há o que processar.

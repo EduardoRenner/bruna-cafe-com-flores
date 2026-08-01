@@ -59,9 +59,10 @@ function classificarToken(token: string): TokenEnvironment {
  * comparando 8 hex, sem que o valor apareça no log — logs de deploy são lidos
  * por mais gente do que as variáveis de ambiente.
  */
-function impressaoDigital(segredo: string): string {
+export function fingerprintSegredo(segredo: string): string {
   return createHash("sha256").update(segredo).digest("hex").slice(0, 8);
 }
+const impressaoDigital = fingerprintSegredo;
 
 export type PaymentConfig = {
   accessToken: string;

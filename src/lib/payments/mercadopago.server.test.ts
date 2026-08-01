@@ -253,6 +253,69 @@ describe("fetchPayment", () => {
   });
 });
 
+describe("verifyWebhookSignature — segundo candidato de data.id", () => {
+  it("aceita quando a assinatura bate com o id alternativo", () => {
+    // Notificação assinada com o data.id da query, enquanto o corpo trazia
+    // outro. Rejeitar aqui descartaria pagamento legítimo.
+    const daQuery = "43231279162";
+    expect(
+      provider.verifyWebhookSignature({
+        signatureHeader: assinar({ dataId: daQuery, requestId: "req-1" }),
+        requestId: "req-1",
+        dataId: "171490830522",
+        dataIdAlternativo: daQuery,
+      }),
+    ).toBe(true);
+  });
+
+  it("continua recusando quando nenhum dos dois bate", () => {
+    expect(
+      provider.verifyWebhookSignature({
+        signatureHeader: assinar({ dataId: "999", requestId: "req-1" }),
+        requestId: "req-1",
+        dataId: "111",
+        dataIdAlternativo: "222",
+      }),
+    ).toBe(false);
+  });
+
+  it("segredo errado não passa nem com dois candidatos", () => {
+    // A garantia que não pode afrouxar: sem o segredo, nenhum id salva.
+    expect(
+      provider.verifyWebhookSignature({
+        signatureHeader: assinar({ dataId: "111", requestId: "req-1", segredo: "outro" }),
+        requestId: "req-1",
+        dataId: "111",
+        dataIdAlternativo: "222",
+      }),
+    ).toBe(false);
+  });
+
+  it("id alternativo igual ao principal não muda nada", () => {
+    expect(
+      provider.verifyWebhookSignature({
+        signatureHeader: assinar({ dataId: "111", requestId: "req-1" }),
+        requestId: "req-1",
+        dataId: "111",
+        dataIdAlternativo: "111",
+      }),
+    ).toBe(true);
+  });
+
+  it("na falha, loga a impressão digital do segredo em uso", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    provider.verifyWebhookSignature({
+      signatureHeader: assinar({ dataId: "999", requestId: "req-1", segredo: "outro" }),
+      requestId: "req-1",
+      dataId: "111",
+    });
+    const texto = JSON.stringify(warn.mock.calls);
+    expect(texto).toContain("webhookSecretFingerprint");
+    // Mas nunca o segredo em si.
+    expect(texto).not.toContain(SEGREDO);
+  });
+});
+
 describe("findPaymentByReference", () => {
   function responder(resultados: unknown[]) {
     vi.stubGlobal(

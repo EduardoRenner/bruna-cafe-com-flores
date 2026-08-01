@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import {
   descreverConfigParaLog,
+  fingerprintSegredo,
   verificarCoerenciaAmbiente,
   type PaymentConfig,
 } from "./config.server";
@@ -226,7 +227,12 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
      * "pagamento aprovado" e receber flores de graça. O Mercado Pago assina
      * `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` com o segredo da conta.
      */
-    verifyWebhookSignature({ signatureHeader, requestId, dataId }): boolean {
+    verifyWebhookSignature({
+      signatureHeader,
+      requestId,
+      dataId,
+      dataIdAlternativo,
+    }): boolean {
       if (!signatureHeader || !dataId) return false;
 
       // Formato: "ts=1704908010,v1=abc123..."
@@ -247,15 +253,42 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
       // O ts do MP vem em segundos; toleramos relógio adiantado por 1 min.
       if (Math.abs(agora - tsNum) > TOLERANCIA_TIMESTAMP_S) return false;
 
-      // O Mercado Pago normaliza id alfanumérico para minúsculas no manifesto.
-      const id = /^[a-zA-Z0-9]+$/.test(dataId) ? dataId.toLowerCase() : dataId;
-      const manifesto = `id:${id};request-id:${requestId ?? ""};ts:${ts};`;
+      const confere = (candidato: string): boolean => {
+        // O Mercado Pago normaliza id alfanumérico para minúsculas no manifesto.
+        const id = /^[a-zA-Z0-9]+$/.test(candidato)
+          ? candidato.toLowerCase()
+          : candidato;
+        const manifesto = `id:${id};request-id:${requestId ?? ""};ts:${ts};`;
+        const esperado = createHmac("sha256", cfg.webhookSecret)
+          .update(manifesto)
+          .digest("hex");
+        return comparaSegura(esperado, v1!.toLowerCase());
+      };
 
-      const esperado = createHmac("sha256", cfg.webhookSecret)
-        .update(manifesto)
-        .digest("hex");
+      if (confere(dataId)) return true;
 
-      return comparaSegura(esperado, v1.toLowerCase());
+      // Corpo e query podem trazer data.id diferentes. Tentar o segundo
+      // candidato custa um HMAC e evita rejeitar notificação legítima.
+      if (dataIdAlternativo && dataIdAlternativo !== dataId) {
+        if (confere(dataIdAlternativo)) {
+          console.warn(
+            "[pagamento] assinatura confere com o data.id alternativo, não com o principal",
+            { usado: dataIdAlternativo, principal: dataId },
+          );
+          return true;
+        }
+      }
+
+      // Nenhum candidato bateu. A causa quase sempre é o segredo errado, e sem
+      // a impressão digital não há como saber QUAL segredo está rodando.
+      console.warn("[pagamento] nenhum candidato de assinatura conferiu", {
+        webhookSecretFingerprint: fingerprintSegredo(cfg.webhookSecret),
+        dataId,
+        dataIdAlternativo: dataIdAlternativo ?? "(ausente)",
+        requestId: requestId ?? "(ausente)",
+        ts,
+      });
+      return false;
     },
   };
 }

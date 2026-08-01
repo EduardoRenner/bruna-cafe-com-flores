@@ -90,5 +90,17 @@ export interface PaymentProvider {
     signatureHeader: string | null;
     requestId: string | null;
     dataId: string | null;
+    /**
+     * Segundo candidato para o id do manifesto.
+     *
+     * O Mercado Pago manda `data.id` no corpo e na query, e nem sempre com o
+     * mesmo valor (notificação de pagamento e de merchant_order chegam com
+     * ids distintos). Como a documentação não diz qual deles entra no
+     * manifesto assinado, tentamos os dois.
+     *
+     * Não afrouxa a segurança: quem não tem o segredo não produz HMAC válido
+     * para id nenhum, e o pagamento é reconsultado na API do gateway depois.
+     */
+    dataIdAlternativo?: string | null;
   }): boolean;
 }

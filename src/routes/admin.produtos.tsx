@@ -21,7 +21,7 @@ import {
   adminUpsertProduct,
   adminDeleteProduct,
   adminUploadProductImage,
-  adminSwapProductOrder,
+  adminMoveProductOrder,
 } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
@@ -49,7 +49,7 @@ function ProdutosAdmin() {
   const upsertFn = useServerFn(adminUpsertProduct);
   const deleteFn = useServerFn(adminDeleteProduct);
   const uploadFn = useServerFn(adminUploadProductImage);
-  const swapFn = useServerFn(adminSwapProductOrder);
+  const moveFn = useServerFn(adminMoveProductOrder);
 
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [deleting, setDeleting] = useState<AdminProduct | null>(null);
@@ -111,15 +111,16 @@ function ProdutosAdmin() {
     }
   }
 
-  // Reordena trocando com o vizinho: a ordem do admin é exatamente a ordem
-  // que o cliente vê no catálogo.
+  // A ordem que aparece aqui é exatamente a ordem que o cliente vê no
+  // catálogo. O servidor renumera a lista toda, então não existe empate de
+  // posição nem seta que "pula" linhas.
   async function move(index: number, dir: -1 | 1) {
-    const a = list[index];
-    const b = list[index + dir];
-    if (!a?.id || !b?.id || reordering) return;
+    const alvo = list[index];
+    if (!alvo?.id || reordering) return;
+    if (index + dir < 0 || index + dir >= list.length) return;
     setReordering(true);
     try {
-      await swapFn({ data: { password, aId: a.id, bId: b.id } });
+      await moveFn({ data: { password, id: alvo.id, direcao: dir === -1 ? "cima" : "baixo" } });
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao reordenar");

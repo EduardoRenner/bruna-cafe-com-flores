@@ -142,31 +142,46 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
   });
 
 /**
- * Troca a posição de dois produtos na ordem do catálogo (setas ↑↓ no admin).
- * O cliente manda os dois ids e os dois valores; o servidor confere no banco.
+ * Move um produto uma posição para cima/baixo no catálogo (setas ↑↓ no admin).
+ *
+ * Renumera a lista inteira em 1..N em vez de só trocar dois valores. Trocar
+ * dois valores parece mais barato, mas quebra quando existem EMPATES em
+ * display_order: aí a ordem real cai no critério de desempate (created_at) e
+ * a seta "subir 1" some com o produto várias linhas acima, o que parece bug.
+ * Foi exatamente o que aconteceu aqui em 2026-07-31 — a coluna tinha sido
+ * preenchida por categoria enquanto o código ordena globalmente, deixando
+ * quatro produtos com display_order = 10, outros quatro com 20, e assim por
+ * diante. Os dados já foram renumerados; renumerar a cada movimento garante
+ * que o problema não volte, seja qual for a origem dos dados.
  */
-export const adminSwapProductOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; aId: string; bId: string }) => data)
+export const adminMoveProductOrder = createServerFn({ method: "POST" })
+  .inputValidator((data: { password: string; id: string; direcao: "cima" | "baixo" }) => data)
   .handler(async ({ data }) => {
     const admin = await verifyAdmin(data.password);
+
+    // Mesma ordenação que o admin e o catálogo público exibem.
     const { data: rows, error: erroLeitura } = await admin
       .from("products")
-      .select("id, display_order")
-      .in("id", [data.aId, data.bId]);
+      .select("id")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true });
     if (erroLeitura) throw new Error(erroLeitura.message);
-    const a = rows?.find((r) => r.id === data.aId);
-    const b = rows?.find((r) => r.id === data.bId);
-    if (!a || !b) throw new Error("Produto não encontrado");
 
-    // Empate (ex.: dois com 0) quebraria a troca — desempata com valores distintos.
-    const ordemA = a.display_order === b.display_order ? b.display_order + 1 : b.display_order;
-    const ordemB = a.display_order === b.display_order ? b.display_order : a.display_order;
+    const ids = (rows ?? []).map((r) => r.id as string);
+    const de = ids.indexOf(data.id);
+    if (de < 0) throw new Error("Produto não encontrado");
 
-    const [{ error: e1 }, { error: e2 }] = await Promise.all([
-      admin.from("products").update({ display_order: ordemA }).eq("id", a.id),
-      admin.from("products").update({ display_order: ordemB }).eq("id", b.id),
-    ]);
-    if (e1 || e2) throw new Error(e1?.message ?? e2?.message ?? "Erro ao reordenar");
+    const para = data.direcao === "cima" ? de - 1 : de + 1;
+    if (para < 0 || para >= ids.length) return { ok: true as const }; // já é a ponta
+
+    [ids[de], ids[para]] = [ids[para], ids[de]];
+
+    const resultados = await Promise.all(
+      ids.map((id, i) => admin.from("products").update({ display_order: i + 1 }).eq("id", id)),
+    );
+    const falha = resultados.find((r) => r.error);
+    if (falha?.error) throw new Error(falha.error.message);
+
     return { ok: true as const };
   });
 

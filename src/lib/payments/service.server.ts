@@ -14,7 +14,21 @@ import { createMercadoPagoProvider } from "./mercadopago.server";
 import type { GatewayPayment, PaymentProvider } from "./types";
 
 function getProvider(): { provider: PaymentProvider; siteUrl: string } | null {
-  const cfg = getPaymentConfig();
+  let cfg;
+  try {
+    cfg = getPaymentConfig();
+  } catch (err) {
+    // getPaymentConfig lança de propósito: configuração pela metade não pode
+    // virar cobrança. Mas quem chama aqui precisa tratar "quebrado" como
+    // "desligado", e não deixar a exceção subir.
+    //
+    // Isto já custou caro uma vez: com SITE_URL malformada, o throw subia pela
+    // reconciliação até a página /pedido/<token> e derrubava exatamente a tela
+    // em que o cliente vai conferir o pagamento que acabou de fazer. Um erro
+    // de digitação numa variável de ambiente não pode ter esse alcance.
+    console.error("[pagamento] configuração inválida — tratando como desligado:", err);
+    return null;
+  }
   if (!cfg) return null;
   return { provider: createMercadoPagoProvider(cfg), siteUrl: cfg.siteUrl };
 }
@@ -320,6 +334,22 @@ export type ReconciliacaoResultado =
  * externa — então não depende de ter recebido nenhum id do lado deles.
  */
 export async function reconciliarPagamentoDoPedido(
+  orderPublicToken: string,
+): Promise<ReconciliacaoResultado> {
+  // NUNCA lança. Quem chama isto está no meio de servir uma página ao cliente;
+  // reconciliar é um bônus oportunista, e nenhum problema aqui — gateway fora,
+  // banco lento, variável de ambiente errada — pode impedir o pedido de
+  // aparecer na tela. O try envolve tudo, inclusive a leitura de configuração,
+  // porque foi justamente ela que escapou da primeira versão.
+  try {
+    return await reconciliar(orderPublicToken);
+  } catch (err) {
+    console.error("[pagamento] falha ao reconciliar:", err);
+    return "erro";
+  }
+}
+
+async function reconciliar(
   orderPublicToken: string,
 ): Promise<ReconciliacaoResultado> {
   const p = getProvider();

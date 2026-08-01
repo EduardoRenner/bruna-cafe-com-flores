@@ -12,6 +12,8 @@
  * movimentação da conta para qualquer visitante que abrisse o código-fonte.
  * Preferimos derrubar o servidor a subir com o segredo exposto.
  */
+import { createHash } from "node:crypto";
+
 const NUNCA_EXPOR = [
   "MP_ACCESS_TOKEN",
   "MP_WEBHOOK_SECRET",
@@ -34,14 +36,94 @@ function garantirSegredosNaoExpostos(): void {
   }
 }
 
+/**
+ * Ambiente deduzido do prefixo do access token.
+ *
+ * Atenção: as credenciais de TESTE da própria aplicação começam com `TEST-`,
+ * mas as credenciais de um USUÁRIO DE TESTE (criado em /users/test_user)
+ * começam com `APP_USR-`, iguais às de produção. Ou seja: "producao" aqui
+ * significa apenas "não é um token TEST-", não é prova de conta real.
+ */
+export type TokenEnvironment = "teste" | "producao" | "desconhecido";
+
+function classificarToken(token: string): TokenEnvironment {
+  if (token.startsWith("TEST-")) return "teste";
+  if (token.startsWith("APP_USR-")) return "producao";
+  return "desconhecido";
+}
+
+/**
+ * Identifica um segredo sem revelá-lo.
+ *
+ * Permite responder "o token que está rodando é o mesmo que colei no Vercel?"
+ * comparando 8 hex, sem que o valor apareça no log — logs de deploy são lidos
+ * por mais gente do que as variáveis de ambiente.
+ */
+function impressaoDigital(segredo: string): string {
+  return createHash("sha256").update(segredo).digest("hex").slice(0, 8);
+}
+
 export type PaymentConfig = {
   accessToken: string;
   webhookSecret: string;
   /** Token de teste do Mercado Pago começa com TEST-. */
   sandbox: boolean;
+  /** Ambiente deduzido do prefixo do token. Ver TokenEnvironment. */
+  tokenEnvironment: TokenEnvironment;
   /** Origem pública do site, para montar as URLs de retorno e de webhook. */
   siteUrl: string;
 };
+
+/** Resumo seguro da configuração, para log de servidor. Nunca inclui segredo. */
+export function descreverConfigParaLog(
+  cfg: PaymentConfig,
+): Record<string, string | boolean> {
+  return {
+    tokenPrefixo: cfg.accessToken.split("-")[0] || "(sem prefixo)",
+    tokenAmbiente: cfg.tokenEnvironment,
+    tokenFingerprint: impressaoDigital(cfg.accessToken),
+    webhookSecretFingerprint: impressaoDigital(cfg.webhookSecret),
+    siteUrl: cfg.siteUrl,
+    initPointUsado: cfg.sandbox ? "sandbox_init_point" : "init_point",
+  };
+}
+
+/** Domínios que só existem em preview/desenvolvimento. */
+const HOSTS_NAO_PRODUCAO = /(^|\.)(localhost|vercel\.app|ngrok(-free)?\.app)$/;
+
+/**
+ * Incoerências que costumam causar "uma das partes é de teste" no checkout.
+ *
+ * Devolve avisos em vez de lançar: uma combinação estranha ainda pode ser
+ * intencional (testar sandbox contra o domínio real, por exemplo), e derrubar
+ * o checkout por heurística seria pior do que o problema.
+ */
+export function verificarCoerenciaAmbiente(cfg: PaymentConfig): string[] {
+  const avisos: string[] = [];
+  const host = new URL(cfg.siteUrl).hostname;
+  const hostDeProducao = !HOSTS_NAO_PRODUCAO.test(host);
+
+  if (cfg.tokenEnvironment === "desconhecido") {
+    avisos.push(
+      "MP_ACCESS_TOKEN não começa com TEST- nem com APP_USR- — o token pode " +
+        "estar truncado ou não ser um access token do Mercado Pago.",
+    );
+  }
+  if (cfg.tokenEnvironment === "teste" && hostDeProducao) {
+    avisos.push(
+      `Token de TESTE (TEST-) rodando no domínio de produção ${host}. ` +
+        "Um comprador real não consegue pagar num checkout de teste.",
+    );
+  }
+  if (cfg.tokenEnvironment === "producao" && !hostDeProducao) {
+    avisos.push(
+      `Token APP_USR- rodando em ${host} (preview/local). Se a intenção era ` +
+        "sandbox, confirme se este token é de um usuário de teste — usuário " +
+        "de teste também usa prefixo APP_USR-.",
+    );
+  }
+  return avisos;
+}
 
 /**
  * Lê e valida a configuração.
@@ -88,10 +170,13 @@ export function getPaymentConfig(): PaymentConfig | null {
     );
   }
 
+  const tokenEnvironment = classificarToken(accessToken!);
+
   return {
     accessToken: accessToken!,
     webhookSecret: webhookSecret!,
-    sandbox: accessToken!.startsWith("TEST-"),
+    sandbox: tokenEnvironment === "teste",
+    tokenEnvironment,
     siteUrl: origem,
   };
 }
@@ -100,8 +185,10 @@ export function getPaymentConfig(): PaymentConfig | null {
 export function isPaymentEnabled(): boolean {
   try {
     return getPaymentConfig() !== null;
-  } catch {
+  } catch (err) {
     // Configuração quebrada não pode virar botão de pagar na cara do cliente.
+    // Mas desligar em silêncio é como o pagamento some sem ninguém perceber.
+    console.error("[pagamento] configuração inválida — pagamento desligado:", err);
     return false;
   }
 }

@@ -12,7 +12,11 @@ import type {
   PaymentProvider,
   PaymentStatus,
 } from "./types";
-import type { PaymentConfig } from "./config.server";
+import {
+  descreverConfigParaLog,
+  verificarCoerenciaAmbiente,
+  type PaymentConfig,
+} from "./config.server";
 
 const API = "https://api.mercadopago.com";
 
@@ -58,6 +62,17 @@ function comparaSegura(a: string, b: string): boolean {
   return timingSafeEqual(ba, bb);
 }
 
+/**
+ * E-mail identificável o suficiente para conferir "é o comprador que eu usei?",
+ * sem despejar o e-mail do cliente no log de deploy.
+ */
+function mascararEmail(email: string | null | undefined): string {
+  if (!email) return "(sem e-mail)";
+  const [local, dominio] = email.split("@");
+  if (!dominio) return "(inválido)";
+  return `${local.slice(0, 2)}***@${dominio}`;
+}
+
 /** Janela de tolerância do timestamp do webhook, contra reenvio de notificação antiga. */
 const TOLERANCIA_TIMESTAMP_S = 15 * 60;
 
@@ -89,6 +104,25 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
     async createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession> {
       type Resp = { id: string; init_point: string; sandbox_init_point: string };
 
+      // O erro "uma das partes é de teste" é decidido dentro do checkout do
+      // Mercado Pago, depois do redirect — daqui a criação da preferência
+      // parece um sucesso. Este log é o que sobra para reconstruir o que foi
+      // enviado: qual token (por impressão digital), qual ambiente e qual
+      // comprador. Sem ele, o único sintoma é a tela de erro no navegador.
+      console.info("[pagamento] criando preferência", {
+        ...descreverConfigParaLog(cfg),
+        paymentId: input.paymentId,
+        orderNumber: input.orderNumber,
+        amountCents: input.amountCents,
+        payerEmail: mascararEmail(input.payer.email),
+        notificationUrl: input.notificationUrl,
+        returnUrl: input.returnUrl,
+      });
+
+      for (const aviso of verificarCoerenciaAmbiente(cfg)) {
+        console.warn("[pagamento] ambiente possivelmente incoerente:", aviso);
+      }
+
       const pref = await chamar<Resp>("/checkout/preferences", {
         method: "POST",
         body: JSON.stringify({
@@ -119,9 +153,23 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
         }),
       });
 
+      const redirectUrl = cfg.sandbox ? pref.sandbox_init_point : pref.init_point;
+
+      console.info("[pagamento] preferência criada", {
+        preferenceId: pref.id,
+        paymentId: input.paymentId,
+        // O prefixo do id da preferência é o user id da conta vendedora. É o
+        // jeito mais direto de conferir para QUAL conta a cobrança foi criada.
+        contaVendedora: pref.id.split("-")[0] ?? "(desconhecida)",
+        initPointUsado: cfg.sandbox ? "sandbox_init_point" : "init_point",
+        // Se o campo escolhido vier vazio, o cliente é redirecionado para
+        // lugar nenhum — vale saber antes de investigar o navegador.
+        redirectVazio: !redirectUrl,
+      });
+
       return {
         providerPreferenceId: pref.id,
-        redirectUrl: cfg.sandbox ? pref.sandbox_init_point : pref.init_point,
+        redirectUrl,
       };
     },
 

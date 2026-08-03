@@ -9,43 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SobreRouteImport } from './routes/sobre'
-import { Route as ContatoRouteImport } from './routes/contato'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as CatalogoRouteImport } from './routes/catalogo'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
-import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
-import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
-import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
-import { Route as ApiWebhooksWhatsappRouteImport } from './routes/api/webhooks/whatsapp'
-import { Route as ApiWebhooksMercadopagoRouteImport } from './routes/api/webhooks/mercadopago'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
+import { Route as ConfirmarEntregaTokenRouteImport } from './routes/confirmar-entrega.$token'
+import { Route as PedidoOrderNumberRouteImport } from './routes/pedido.$orderNumber'
 import { Route as ApiPublicProdutosRouteImport } from './routes/api/public/produtos'
-import { Route as ApiIntegrationsN8nPedidosRouteImport } from './routes/api/integrations/n8n/pedidos'
+import { Route as ApiWebhooksMercadopagoRouteImport } from './routes/api/webhooks/mercadopago'
+import { Route as ApiWebhooksWhatsappRouteImport } from './routes/api/webhooks/whatsapp'
 import { Route as ApiIntegrationsN8nCatalogoRouteImport } from './routes/api/integrations/n8n/catalogo'
+import { Route as ApiIntegrationsN8nPedidosRouteImport } from './routes/api/integrations/n8n/pedidos'
 import { Route as ApiIntegrationsN8nPedidosStatusRouteImport } from './routes/api/integrations/n8n/pedidos.status'
 
-const SobreRoute = SobreRouteImport.update({
-  id: '/sobre',
-  path: '/sobre',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContatoRoute = ContatoRouteImport.update({
-  id: '/contato',
-  path: '/contato',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CatalogoRoute = CatalogoRouteImport.update({
-  id: '/catalogo',
-  path: '/catalogo',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -53,9 +39,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -63,19 +64,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const PedidoOrderNumberRoute = PedidoOrderNumberRouteImport.update({
-  id: '/pedido/$orderNumber',
-  path: '/pedido/$orderNumber',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminProdutosRoute = AdminProdutosRouteImport.update({
-  id: '/produtos',
-  path: '/produtos',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPedidosRoute = AdminPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
+const AdminClientesRoute = AdminClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
@@ -83,19 +74,24 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminClientesRoute = AdminClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
+const AdminPedidosRoute = AdminPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiWebhooksWhatsappRoute = ApiWebhooksWhatsappRouteImport.update({
-  id: '/api/webhooks/whatsapp',
-  path: '/api/webhooks/whatsapp',
+const AdminProdutosRoute = AdminProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ConfirmarEntregaTokenRoute = ConfirmarEntregaTokenRouteImport.update({
+  id: '/confirmar-entrega/$token',
+  path: '/confirmar-entrega/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWebhooksMercadopagoRoute = ApiWebhooksMercadopagoRouteImport.update({
-  id: '/api/webhooks/mercadopago',
-  path: '/api/webhooks/mercadopago',
+const PedidoOrderNumberRoute = PedidoOrderNumberRouteImport.update({
+  id: '/pedido/$orderNumber',
+  path: '/pedido/$orderNumber',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicProdutosRoute = ApiPublicProdutosRouteImport.update({
@@ -103,16 +99,26 @@ const ApiPublicProdutosRoute = ApiPublicProdutosRouteImport.update({
   path: '/api/public/produtos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiIntegrationsN8nPedidosRoute =
-  ApiIntegrationsN8nPedidosRouteImport.update({
-    id: '/api/integrations/n8n/pedidos',
-    path: '/api/integrations/n8n/pedidos',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ApiWebhooksMercadopagoRoute = ApiWebhooksMercadopagoRouteImport.update({
+  id: '/api/webhooks/mercadopago',
+  path: '/api/webhooks/mercadopago',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksWhatsappRoute = ApiWebhooksWhatsappRouteImport.update({
+  id: '/api/webhooks/whatsapp',
+  path: '/api/webhooks/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntegrationsN8nCatalogoRoute =
   ApiIntegrationsN8nCatalogoRouteImport.update({
     id: '/api/integrations/n8n/catalogo',
     path: '/api/integrations/n8n/catalogo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsN8nPedidosRoute =
+  ApiIntegrationsN8nPedidosRouteImport.update({
+    id: '/api/integrations/n8n/pedidos',
+    path: '/api/integrations/n8n/pedidos',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiIntegrationsN8nPedidosStatusRoute =
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
+  '/confirmar-entrega/$token': typeof ConfirmarEntregaTokenRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
+  '/confirmar-entrega/$token': typeof ConfirmarEntregaTokenRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
+  '/confirmar-entrega/$token': typeof ConfirmarEntregaTokenRoute
   '/pedido/$orderNumber': typeof PedidoOrderNumberRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/produtos': typeof ApiPublicProdutosRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/confirmar-entrega/$token'
     | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/confirmar-entrega/$token'
     | '/pedido/$orderNumber'
     | '/admin'
     | '/api/public/produtos'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/confirmar-entrega/$token'
     | '/pedido/$orderNumber'
     | '/admin/'
     | '/api/public/produtos'
@@ -251,6 +263,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContatoRoute: typeof ContatoRoute
   SobreRoute: typeof SobreRoute
+  ConfirmarEntregaTokenRoute: typeof ConfirmarEntregaTokenRoute
   PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
   ApiPublicProdutosRoute: typeof ApiPublicProdutosRoute
   ApiWebhooksMercadopagoRoute: typeof ApiWebhooksMercadopagoRoute
@@ -261,32 +274,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sobre': {
-      id: '/sobre'
-      path: '/sobre'
-      fullPath: '/sobre'
-      preLoaderRoute: typeof SobreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contato': {
-      id: '/contato'
-      path: '/contato'
-      fullPath: '/contato'
-      preLoaderRoute: typeof ContatoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/catalogo': {
-      id: '/catalogo'
-      path: '/catalogo'
-      fullPath: '/catalogo'
-      preLoaderRoute: typeof CatalogoRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -296,11 +288,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -310,25 +323,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/pedido/$orderNumber': {
-      id: '/pedido/$orderNumber'
-      path: '/pedido/$orderNumber'
-      fullPath: '/pedido/$orderNumber'
-      preLoaderRoute: typeof PedidoOrderNumberRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/produtos': {
-      id: '/admin/produtos'
-      path: '/produtos'
-      fullPath: '/admin/produtos'
-      preLoaderRoute: typeof AdminProdutosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pedidos': {
-      id: '/admin/pedidos'
-      path: '/pedidos'
-      fullPath: '/admin/pedidos'
-      preLoaderRoute: typeof AdminPedidosRouteImport
+    '/admin/clientes': {
+      id: '/admin/clientes'
+      path: '/clientes'
+      fullPath: '/admin/clientes'
+      preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/configuracoes': {
@@ -338,25 +337,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/clientes': {
-      id: '/admin/clientes'
-      path: '/clientes'
-      fullPath: '/admin/clientes'
-      preLoaderRoute: typeof AdminClientesRouteImport
+    '/admin/pedidos': {
+      id: '/admin/pedidos'
+      path: '/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AdminPedidosRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/webhooks/whatsapp': {
-      id: '/api/webhooks/whatsapp'
-      path: '/api/webhooks/whatsapp'
-      fullPath: '/api/webhooks/whatsapp'
-      preLoaderRoute: typeof ApiWebhooksWhatsappRouteImport
+    '/admin/produtos': {
+      id: '/admin/produtos'
+      path: '/produtos'
+      fullPath: '/admin/produtos'
+      preLoaderRoute: typeof AdminProdutosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/confirmar-entrega/$token': {
+      id: '/confirmar-entrega/$token'
+      path: '/confirmar-entrega/$token'
+      fullPath: '/confirmar-entrega/$token'
+      preLoaderRoute: typeof ConfirmarEntregaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/webhooks/mercadopago': {
-      id: '/api/webhooks/mercadopago'
-      path: '/api/webhooks/mercadopago'
-      fullPath: '/api/webhooks/mercadopago'
-      preLoaderRoute: typeof ApiWebhooksMercadopagoRouteImport
+    '/pedido/$orderNumber': {
+      id: '/pedido/$orderNumber'
+      path: '/pedido/$orderNumber'
+      fullPath: '/pedido/$orderNumber'
+      preLoaderRoute: typeof PedidoOrderNumberRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/produtos': {
@@ -366,11 +372,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProdutosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/integrations/n8n/pedidos': {
-      id: '/api/integrations/n8n/pedidos'
-      path: '/api/integrations/n8n/pedidos'
-      fullPath: '/api/integrations/n8n/pedidos'
-      preLoaderRoute: typeof ApiIntegrationsN8nPedidosRouteImport
+    '/api/webhooks/mercadopago': {
+      id: '/api/webhooks/mercadopago'
+      path: '/api/webhooks/mercadopago'
+      fullPath: '/api/webhooks/mercadopago'
+      preLoaderRoute: typeof ApiWebhooksMercadopagoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/whatsapp': {
+      id: '/api/webhooks/whatsapp'
+      path: '/api/webhooks/whatsapp'
+      fullPath: '/api/webhooks/whatsapp'
+      preLoaderRoute: typeof ApiWebhooksWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/n8n/catalogo': {
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/api/integrations/n8n/catalogo'
       fullPath: '/api/integrations/n8n/catalogo'
       preLoaderRoute: typeof ApiIntegrationsN8nCatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/n8n/pedidos': {
+      id: '/api/integrations/n8n/pedidos'
+      path: '/api/integrations/n8n/pedidos'
+      fullPath: '/api/integrations/n8n/pedidos'
+      preLoaderRoute: typeof ApiIntegrationsN8nPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/n8n/pedidos/status': {
@@ -429,6 +449,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContatoRoute: ContatoRoute,
   SobreRoute: SobreRoute,
+  ConfirmarEntregaTokenRoute: ConfirmarEntregaTokenRoute,
   PedidoOrderNumberRoute: PedidoOrderNumberRoute,
   ApiPublicProdutosRoute: ApiPublicProdutosRoute,
   ApiWebhooksMercadopagoRoute: ApiWebhooksMercadopagoRoute,
@@ -439,3 +460,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

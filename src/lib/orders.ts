@@ -23,6 +23,7 @@ export type OrderItem = { id?: string; name: string; quantity: number; price: nu
 export interface OrderRow {
   id: string;
   order_number: string;
+  public_token?: string;
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
@@ -32,6 +33,13 @@ export interface OrderRow {
   delivery_time: string | null;
   payment_method: string;
   notes: string | null;
+  // A partir de 2026-08-02, o checkout grava aqui em vez de `notes` (mantido
+  // para pedidos antigos, ver migração 20260802160000).
+  delivery_instructions?: string | null;
+  card_message?: string | null;
+  delivered_confirmed_at?: string | null;
+  delivered_received_by?: string | null;
+  delivered_received_type?: string | null;
   status: string;
   payment_status?: string;
   total: number;

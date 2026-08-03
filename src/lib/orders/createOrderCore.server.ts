@@ -23,6 +23,8 @@ export type CreateOrderInput = {
   delivery_time?: string | null;
   payment_method: string; // 'pix' | 'dinheiro' | 'cartao'
   notes?: string | null;
+  delivery_instructions?: string | null;
+  card_message?: string | null;
   items: OrderItemInput[];
 };
 
@@ -32,7 +34,12 @@ export type CreateOrderResult = {
   items: { id?: string; name: string; quantity: number; price: number }[];
   deliveryFee: number;
   total: number;
+  pdfUrl: string | null;
 };
+
+// Limite do campo "mensagem do cartão" — cartões físicos não têm espaço para
+// textos longos, e evita que a mensagem estoure o bloco reservado no PDF.
+const CARD_MESSAGE_MAX_LENGTH = 200;
 
 const DELIVERY_FEE_LABEL = "Taxa de entrega";
 
@@ -134,21 +141,62 @@ export async function criarPedido(
       delivery_date: data.delivery_date || null,
       delivery_time: data.delivery_time || null,
       payment_method: data.payment_method,
+      // `notes` continua aceito por compatibilidade (ex.: agente do n8n que
+      // ainda não separa os dois campos); o checkout do site já manda os
+      // campos novos direto.
       notes: data.notes?.slice(0, 2000) || null,
+      delivery_instructions: data.delivery_instructions?.trim().slice(0, 2000) || null,
+      card_message: data.card_message?.trim().slice(0, CARD_MESSAGE_MAX_LENGTH) || null,
       status: "pendente",
       total: 0, // recalculado pelo trigger a partir dos itens acima
       items,
     })
-    .select("order_number, public_token")
+    .select("order_number, public_token, created_at")
     .single();
 
   if (error) throw new Error(error.message);
 
+  const orderNumber = (row?.order_number as string) ?? null;
+  const orderToken = (row?.public_token as string) ?? null;
+  const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  // Gera o PDF (dados do pedido + cartão + comprovante com QR) e sobe no
+  // bucket privado, devolvendo uma signed URL para ir na mensagem do
+  // WhatsApp. Best-effort: se falhar, o pedido já está gravado e o checkout
+  // segue sem o link — não pode travar o fechamento do pedido nem o caminho
+  // do n8n.
+  let pdfUrl: string | null = null;
+  if (orderNumber && orderToken) {
+    const { generateAndStoreOrderPdf } = await import("@/lib/orderPdf.server");
+    pdfUrl = await generateAndStoreOrderPdf({
+      id: "",
+      order_number: orderNumber,
+      public_token: orderToken,
+      customer_name: data.customer_name.trim(),
+      customer_phone: data.customer_phone.trim(),
+      customer_email: data.customer_email?.trim() || null,
+      delivery_type: data.delivery_type,
+      delivery_address: data.delivery_address ?? null,
+      delivery_date: data.delivery_date || null,
+      delivery_time: data.delivery_time || null,
+      payment_method: data.payment_method,
+      notes: data.notes?.trim() || null,
+      delivery_instructions: data.delivery_instructions?.trim() || null,
+      card_message: data.card_message?.trim() || null,
+      status: "pendente",
+      total,
+      items,
+      created_at: (row?.created_at as string) ?? new Date().toISOString(),
+      updated_at: (row?.created_at as string) ?? new Date().toISOString(),
+    });
+  }
+
   return {
-    orderNumber: (row?.order_number as string) ?? null,
-    orderToken: (row?.public_token as string) ?? null,
+    orderNumber,
+    orderToken,
     items,
     deliveryFee,
-    total: items.reduce((s, i) => s + i.price * i.quantity, 0),
+    total,
+    pdfUrl,
   };
 }

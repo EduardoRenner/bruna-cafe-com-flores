@@ -79,22 +79,24 @@ export type Database = {
       }
       orders: {
         Row: {
+          card_message: string | null
           created_at: string
           customer_email: string | null
           customer_name: string
           customer_phone: string
+          delivered_confirmed_at: string | null
+          delivered_received_by: string | null
+          delivered_received_type: string | null
           delivery_address: Json | null
           delivery_date: string | null
+          delivery_instructions: string | null
           delivery_time: string | null
           delivery_type: string
           id: string
           items: Json
-          mp_payment_id: string | null
-          mp_preference_id: string | null
           notes: string | null
           order_number: string
           payment_method: string
-          payment_provider: string | null
           payment_status: string
           public_token: string
           status: string
@@ -102,22 +104,24 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          card_message?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name: string
           customer_phone: string
+          delivered_confirmed_at?: string | null
+          delivered_received_by?: string | null
+          delivered_received_type?: string | null
           delivery_address?: Json | null
           delivery_date?: string | null
+          delivery_instructions?: string | null
           delivery_time?: string | null
           delivery_type: string
           id?: string
           items: Json
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
           notes?: string | null
           order_number: string
           payment_method: string
-          payment_provider?: string | null
           payment_status?: string
           public_token?: string
           status?: string
@@ -125,22 +129,24 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          card_message?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string
+          delivered_confirmed_at?: string | null
+          delivered_received_by?: string | null
+          delivered_received_type?: string | null
           delivery_address?: Json | null
           delivery_date?: string | null
+          delivery_instructions?: string | null
           delivery_time?: string | null
           delivery_type?: string
           id?: string
           items?: Json
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
           notes?: string | null
           order_number?: string
           payment_method?: string
-          payment_provider?: string | null
           payment_status?: string
           public_token?: string
           status?: string
@@ -308,7 +314,7 @@ export type Database = {
           is_public?: boolean
           key?: string
           updated_at?: string
-          value?: Json
+          value: Json
         }
         Relationships: []
       }

@@ -20,7 +20,20 @@ async function verifyAdmin(password: string) {
     _password: password,
     _ip: ip,
   });
-  if (error) throw new Error("Configuração indisponível");
+  if (error) {
+    // A tela mostra uma mensagem genérica de propósito — quem tenta invadir não
+    // precisa saber como a infraestrutura está montada. Mas o motivo real tem
+    // que ir para o log do servidor: sem isso, "Configuração indisponível"
+    // cobre desde chave de service role errada até banco fora do ar, e não
+    // sobra nada para investigar (foi o que aconteceu em 2026-08-04).
+    console.error("[admin] verify_admin_login falhou", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error("Configuração indisponível");
+  }
   if (data === "locked") {
     throw new Error("Muitas tentativas de login. Aguarde alguns minutos e tente novamente.");
   }
@@ -135,6 +148,9 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
         category: string;
         image_url?: string | null;
         active: boolean;
+        // Posição desejada no catálogo (1 = primeiro). Opcional: quando não
+        // vem, a ordem atual do produto é preservada.
+        display_order?: number | null;
       };
     }) => data,
   )
@@ -152,6 +168,12 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
     if (p.id) {
       const { error } = await admin.from("products").update(payload).eq("id", p.id);
       if (error) throw new Error(error.message);
+      // A posição não entra no payload do update: gravar o número solto
+      // recriaria os empates que a renumeração existe para evitar. Vai pelo
+      // mesmo caminho das setas e do arrastar.
+      if (typeof p.display_order === "number" && Number.isFinite(p.display_order)) {
+        await reposicionarProduto(admin, p.id, Math.trunc(p.display_order) - 1);
+      }
       return { ok: true as const };
     }
     // Produto novo entra no fim da ordem do catálogo.
@@ -169,46 +191,88 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
   });
 
 /**
- * Move um produto uma posição para cima/baixo no catálogo (setas ↑↓ no admin).
+ * Tira o produto da lista e o encaixa no índice `destino` (0-based), depois
+ * renumera o catálogo inteiro em 1..N.
  *
- * Renumera a lista inteira em 1..N em vez de só trocar dois valores. Trocar
- * dois valores parece mais barato, mas quebra quando existem EMPATES em
- * display_order: aí a ordem real cai no critério de desempate (created_at) e
- * a seta "subir 1" some com o produto várias linhas acima, o que parece bug.
- * Foi exatamente o que aconteceu aqui em 2026-07-31 — a coluna tinha sido
- * preenchida por categoria enquanto o código ordena globalmente, deixando
- * quatro produtos com display_order = 10, outros quatro com 20, e assim por
- * diante. Os dados já foram renumerados; renumerar a cada movimento garante
- * que o problema não volte, seja qual for a origem dos dados.
+ * Renumerar tudo, em vez de só gravar um número novo no produto movido, é
+ * proposital. Números soltos criam EMPATES em display_order: aí a ordem real
+ * cai no critério de desempate (created_at) e o produto aparece longe de onde
+ * foi colocado, o que parece bug. Foi exatamente o que aconteceu aqui em
+ * 2026-07-31 — a coluna tinha sido preenchida por categoria enquanto o código
+ * ordena globalmente, deixando quatro produtos com display_order = 10, outros
+ * quatro com 20, e assim por diante. Os dados já foram renumerados; renumerar
+ * a cada movimento garante que o problema não volte, seja qual for a origem.
+ *
+ * As três formas de ordenar no painel (setas ↑↓, arrastar e soltar, campo de
+ * posição na edição) passam por aqui, então nunca divergem entre si.
  */
+async function reposicionarProduto(
+  admin: Awaited<ReturnType<typeof exigirSessao>>,
+  id: string,
+  destino: number,
+) {
+  // Mesma ordenação que o admin e o catálogo público exibem.
+  const { data: rows, error: erroLeitura } = await admin
+    .from("products")
+    .select("id")
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (erroLeitura) throw new Error(erroLeitura.message);
+
+  const ids = (rows ?? []).map((r) => r.id as string);
+  const de = ids.indexOf(id);
+  if (de < 0) throw new Error("Produto não encontrado");
+
+  // Posição fora da lista não é erro: quem digita 99 no campo de posição quer
+  // dizer "manda pro fim", e quem digita 0 quer "manda pro começo".
+  const para = Math.min(Math.max(destino, 0), ids.length - 1);
+  if (para === de) return;
+
+  ids.splice(de, 1);
+  ids.splice(para, 0, id);
+
+  const resultados = await Promise.all(
+    ids.map((pid, i) => admin.from("products").update({ display_order: i + 1 }).eq("id", pid)),
+  );
+  const falha = resultados.find((r) => r.error);
+  if (falha?.error) throw new Error(falha.error.message);
+}
+
+/** Move um produto uma posição para cima/baixo no catálogo (setas ↑↓ no admin). */
 export const adminMoveProductOrder = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; direcao: "cima" | "baixo" }) => data)
   .handler(async ({ data }) => {
     const admin = await exigirSessao();
 
-    // Mesma ordenação que o admin e o catálogo público exibem.
-    const { data: rows, error: erroLeitura } = await admin
+    const { data: rows, error } = await admin
       .from("products")
       .select("id")
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: true });
-    if (erroLeitura) throw new Error(erroLeitura.message);
+    if (error) throw new Error(error.message);
 
     const ids = (rows ?? []).map((r) => r.id as string);
     const de = ids.indexOf(data.id);
     if (de < 0) throw new Error("Produto não encontrado");
 
-    const para = data.direcao === "cima" ? de - 1 : de + 1;
-    if (para < 0 || para >= ids.length) return { ok: true as const }; // já é a ponta
+    await reposicionarProduto(admin, data.id, data.direcao === "cima" ? de - 1 : de + 1);
+    return { ok: true as const };
+  });
 
-    [ids[de], ids[para]] = [ids[para], ids[de]];
-
-    const resultados = await Promise.all(
-      ids.map((id, i) => admin.from("products").update({ display_order: i + 1 }).eq("id", id)),
-    );
-    const falha = resultados.find((r) => r.error);
-    if (falha?.error) throw new Error(falha.error.message);
-
+/**
+ * Coloca o produto numa posição específica do catálogo (1 = primeiro).
+ *
+ * Usada pelo arrastar e soltar e pelo campo "Posição no catálogo". Recebe a
+ * posição de destino em vez da lista inteira reordenada de propósito: se a
+ * tela estiver desatualizada (a Bruna com o painel aberto em dois lugares),
+ * mandar a lista toda apagaria as mudanças feitas do outro lado.
+ */
+export const adminSetProductPosition = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; posicao: number }) => data)
+  .handler(async ({ data }) => {
+    const admin = await exigirSessao();
+    if (!Number.isFinite(data.posicao)) throw new Error("Posição inválida");
+    await reposicionarProduto(admin, data.id, Math.trunc(data.posicao) - 1);
     return { ok: true as const };
   });
 

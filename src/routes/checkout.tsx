@@ -140,7 +140,11 @@ function CheckoutPage() {
       }
     }
 
-    const notes = String(fd.get("notes") ?? "").trim();
+    const deliveryInstructions = String(fd.get("delivery_instructions") ?? "").trim();
+    const cardMessage = String(fd.get("card_message") ?? "").trim().slice(0, 200);
+    // Fonte única: a mesma variável que decide se aparece "Pagar agora", se o
+    // campo de troco aparece e quais meios o gateway abre. Ler o form aqui
+    // criaria um segundo caminho para o mesmo dado, livre para divergir.
     const paymentLabel = formaPagamento;
     const paymentDb = PAYMENT_DB[paymentLabel] ?? "pix";
 
@@ -169,6 +173,9 @@ function CheckoutPage() {
     // quando ela funciona, sobrescrevemos com os valores que o servidor realmente gravou.
     let finalItems = items.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price }));
     let finalDeliveryFee = deliveryFee;
+    // Signed URL do PDF (gerado no servidor ao salvar o pedido). `null` se a
+    // geração falhar — a mensagem sai sem o link em vez de travar o pedido.
+    let pdfUrl: string | null = null;
 
     const dbItems: { id?: string; name: string; quantity: number; price: number }[] = items.map((i) => ({
       id: i.id,
@@ -198,7 +205,8 @@ function CheckoutPage() {
           delivery_time: timeRaw || null,
           payment_method: paymentDb,
           change_for: changeFor,
-          notes: notes || null,
+          delivery_instructions: deliveryInstructions || null,
+          card_message: cardMessage || null,
           items: dbItems,
         },
       });
@@ -208,6 +216,7 @@ function CheckoutPage() {
         finalItems = res.items.filter((i) => i.name !== "Taxa de entrega");
         finalDeliveryFee = res.deliveryFee ?? finalDeliveryFee;
       }
+      if (typeof res?.pdfUrl === "string") pdfUrl = res.pdfUrl;
     } catch (err) {
       console.error("Falha ao salvar o pedido:", err);
       if (pagarOnline) {
@@ -254,7 +263,10 @@ function CheckoutPage() {
       ? `*Data desejada:* ${formatDateBR(dateRaw)}${timeRaw ? " às " + timeRaw : ""}`
       : "";
     const paymentLine = `*Pagamento:* ${paymentLabel}`;
-    const notesLine = notes ? `*Observações:* ${notes}` : "";
+    const instructionsLine = deliveryInstructions
+      ? `*Instruções de entrega:* ${deliveryInstructions}`
+      : "";
+    const cardMessageLine = cardMessage ? `*Mensagem do cartão:* ${cardMessage}` : "";
 
     const message = [
       `*Novo Pedido — ${orderNumber}*`,
@@ -269,9 +281,12 @@ function CheckoutPage() {
       deliveryLine,
       dateLine,
       paymentLine,
-      notesLine,
+      instructionsLine,
+      cardMessageLine,
       ``,
       `*Total: ${formatBRL(finalItems.reduce((s, i) => s + i.price * i.quantity, 0) + finalDeliveryFee)}*`,
+      ``,
+      pdfUrl ? `*PDF do pedido (cartão + comprovante):* ${pdfUrl}` : "",
       ``,
       `Pedido feito pelo site — Bruna Café com Flores`,
     ]
@@ -483,12 +498,28 @@ function CheckoutPage() {
             {/* Observações */}
             <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-card-soft">
               <h2 className="font-display text-xl">Observações</h2>
-              <Textarea
-                name="notes"
-                className="mt-4"
-                rows={3}
-                placeholder="Mensagem no cartão, preferências, referências…"
-              />
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label>Instruções de entrega</Label>
+                  <Textarea
+                    name="delivery_instructions"
+                    className="mt-2"
+                    rows={2}
+                    placeholder="Horário preferido, ponto de referência…"
+                  />
+                </div>
+                <div>
+                  <Label>Mensagem do cartão</Label>
+                  <Textarea
+                    name="card_message"
+                    className="mt-2"
+                    rows={3}
+                    maxLength={200}
+                    placeholder="O que vai escrito no cartão que acompanha as flores…"
+                  />
+                  <p className="mt-1 text-right text-xs text-muted-foreground">Até 200 caracteres</p>
+                </div>
+              </div>
             </section>
 
             {/* Pagamento */}

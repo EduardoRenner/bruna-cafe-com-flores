@@ -13,14 +13,17 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Power, Trash2, Upload, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Power, Trash2, Upload, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { categories, formatBRL, type Category } from "@/lib/products";
+import { useArrastarOrdem } from "@/components/admin/use-arrastar-ordem";
+import { cn } from "@/lib/utils";
 import {
   adminListProducts,
   adminUpsertProduct,
   adminDeleteProduct,
   adminUploadProductImage,
   adminMoveProductOrder,
+  adminSetProductPosition,
 } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
@@ -48,6 +51,7 @@ function ProdutosAdmin() {
   const deleteFn = useServerFn(adminDeleteProduct);
   const uploadFn = useServerFn(adminUploadProductImage);
   const moveFn = useServerFn(adminMoveProductOrder);
+  const setPositionFn = useServerFn(adminSetProductPosition);
 
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [deleting, setDeleting] = useState<AdminProduct | null>(null);
@@ -61,8 +65,10 @@ function ProdutosAdmin() {
   });
 
   function refresh() {
-    qc.invalidateQueries({ queryKey: ["admin-products"] });
-    qc.invalidateQueries({ queryKey: ["products"] });
+    return Promise.all([
+      qc.invalidateQueries({ queryKey: ["admin-products"] }),
+      qc.invalidateQueries({ queryKey: ["products"] }),
+    ]);
   }
 
   async function save(p: AdminProduct) {
@@ -77,6 +83,8 @@ function ProdutosAdmin() {
             category: p.category,
             image_url: p.image_url,
             active: p.active,
+            // Só em produto já existente: o novo sempre entra no fim.
+            display_order: p.id ? p.display_order : undefined,
           },
         },
       });
@@ -118,12 +126,45 @@ function ProdutosAdmin() {
     setReordering(true);
     try {
       await moveFn({ data: { id: alvo.id, direcao: dir === -1 ? "cima" : "baixo" } });
-      refresh();
+      await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao reordenar");
     } finally {
       setReordering(false);
     }
+  }
+
+  // Arrastar e soltar. Cai na mesma função de servidor do campo de posição, e
+  // só resolve depois do refresh — é o que segura a prévia da tela no lugar
+  // até a lista real chegar.
+  async function soltar(id: string, posicao: number) {
+    try {
+      await setPositionFn({ data: { id, posicao } });
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao reordenar");
+      await refresh();
+    }
+  }
+
+  // Um hook por superfície: a tabela do desktop e os cards do mobile têm
+  // markup próprio e cada um mede os próprios elementos.
+  const dndTabela = useArrastarOrdem(list, soltar);
+  const dndCards = useArrastarOrdem(list, soltar);
+
+  /**
+   * Quem fica em volta do produto se ele for para a posição digitada.
+   * Sem isso o campo de posição é um número no vácuo: a Bruna pensa em "esse
+   * fica do lado daquele", não em "esse é o 7º".
+   */
+  function vizinhos(id: string | undefined, posicao: number) {
+    const de = list.findIndex((x) => x.id === id);
+    if (de < 0 || !Number.isFinite(posicao)) return null;
+    const nova = [...list];
+    const [movido] = nova.splice(de, 1);
+    const para = Math.min(Math.max(Math.trunc(posicao) - 1, 0), nova.length);
+    nova.splice(para, 0, movido);
+    return { antes: nova[para - 1]?.name ?? null, depois: nova[para + 1]?.name ?? null };
   }
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -155,6 +196,12 @@ function ProdutosAdmin() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {isLoading ? "Carregando…" : `${list.length} produtos cadastrados`}
+          {!isLoading && list.length > 1 && (
+            <span className="block text-xs">
+              Arraste pelo <GripVertical className="inline h-3 w-3 align-text-bottom" /> para mudar
+              a ordem do catálogo — é essa a ordem que o cliente vê.
+            </span>
+          )}
         </p>
         <Button onClick={() => setEditing(emptyProduct())} className="bg-rose-deep text-primary-foreground">
           <Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Adicionar produto</span><span className="sm:hidden">Adicionar</span>
@@ -165,6 +212,7 @@ function ProdutosAdmin() {
           <table className="w-full text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted-foreground">
               <tr>
+                <th className="w-10 p-4 text-left" title="Arraste para reordenar">#</th>
                 <th className="p-4 text-left">Produto</th>
                 <th className="p-4 text-left">Categoria</th>
                 <th className="p-4 text-right">Preço</th>
@@ -173,8 +221,28 @@ function ProdutosAdmin() {
               </tr>
             </thead>
             <tbody>
-              {list.map((p, i) => (
-                <tr key={p.id} className="border-b border-border/50">
+              {dndTabela.itensVisiveis.map((p, i) => (
+                <tr
+                  key={p.id}
+                  ref={dndTabela.registrar(p.id)}
+                  className={cn(
+                    "border-b border-border/50",
+                    dndTabela.idArrastando === p.id && "bg-secondary/60 opacity-70",
+                  )}
+                >
+                  <td className="p-4">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <button
+                        type="button"
+                        aria-label={`Arrastar ${p.name} para outra posição`}
+                        className="rounded p-1 hover:bg-secondary"
+                        {...dndTabela.arrastarProps(p.id)}
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs tabular-nums">{i + 1}</span>
+                    </div>
+                  </td>
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       {p.image_url ? <img src={p.image_url} alt="" className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-muted" />}
@@ -199,15 +267,30 @@ function ProdutosAdmin() {
                 </tr>
               ))}
               {!isLoading && list.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum produto cadastrado ainda.</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhum produto cadastrado ainda.</td></tr>
               )}
             </tbody>
           </table>
         </div>
         {/* Mobile: cards */}
         <div className="divide-y divide-border/50 md:hidden">
-          {list.map((p, i) => (
-            <div key={p.id} className="flex items-start gap-3 p-4">
+          {dndCards.itensVisiveis.map((p, i) => (
+            <div
+              key={p.id}
+              ref={dndCards.registrar(p.id)}
+              className={cn(
+                "flex items-start gap-3 p-4",
+                dndCards.idArrastando === p.id && "bg-secondary/60 opacity-70",
+              )}
+            >
+              <button
+                type="button"
+                aria-label={`Arrastar ${p.name} para outra posição`}
+                className="mt-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-secondary"
+                {...dndCards.arrastarProps(p.id)}
+              >
+                <GripVertical className="h-5 w-5" />
+              </button>
               {p.image_url ? (
                 <img src={p.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
               ) : (
@@ -279,6 +362,48 @@ function ProdutosAdmin() {
                 </div>
                 {editing.image_url && <img src={editing.image_url} alt="" className="mt-2 h-24 w-24 rounded-md object-cover" />}
               </div>
+              {editing.id ? (
+                <div className="rounded-lg border p-3">
+                  <Label htmlFor="posicao">Posição no catálogo</Label>
+                  <div className="mt-1 flex items-center gap-3">
+                    <Input
+                      id="posicao"
+                      type="number"
+                      min={1}
+                      max={list.length}
+                      className="w-24"
+                      value={editing.display_order ?? ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          display_order: e.target.value === "" ? undefined : Number(e.target.value),
+                        })
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground">de {list.length}</span>
+                  </div>
+                  {(() => {
+                    const v = vizinhos(editing.id, editing.display_order ?? 0);
+                    if (!v) return null;
+                    if (!v.antes && !v.depois) return null;
+                    return (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {v.antes ? <>Vai aparecer depois de <strong>{v.antes}</strong></> : <>Vai aparecer em primeiro</>}
+                        {v.depois ? <> e antes de <strong>{v.depois}</strong>.</> : <> e em último.</>}
+                      </p>
+                    );
+                  })()}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    A ordem vale para o catálogo inteiro. Ao filtrar por categoria, os produtos
+                    seguem essa mesma sequência.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Produtos novos entram no fim do catálogo. Depois de salvar você pode arrastar
+                  ou mudar a posição por aqui.
+                </p>
+              )}
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <Label htmlFor="active">Produto ativo</Label>
                 <Switch id="active" checked={editing.active} onCheckedChange={(v) => setEditing({ ...editing, active: v })} />

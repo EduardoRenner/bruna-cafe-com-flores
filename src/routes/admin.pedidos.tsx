@@ -251,10 +251,33 @@ function PedidosAdmin() {
           {sel && (
             <div className="mt-6 space-y-4 text-sm">
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1" onClick={() => printOrderPDF(sel)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    // Precisa abrir a aba na mesma pilha síncrona do clique —
+                    // ver comentário em printOrderPDF.
+                    const preview = window.open("", "_blank");
+                    printOrderPDF(sel, preview).catch((err) => {
+                      console.error("Falha ao gerar PDF:", err);
+                      toast.error("Erro ao gerar PDF");
+                    });
+                  }}
+                >
                   <Printer className="mr-2 h-4 w-4" /> Imprimir
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1" onClick={() => downloadOrderPDF(sel)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    downloadOrderPDF(sel).catch((err) => {
+                      console.error("Falha ao gerar PDF:", err);
+                      toast.error("Erro ao gerar PDF");
+                    });
+                  }}
+                >
                   <Download className="mr-2 h-4 w-4" /> Baixar PDF
                 </Button>
               </div>
@@ -309,7 +332,9 @@ function PedidosAdmin() {
                   </SelectContent>
                 </Select>
               </div>
-              {sel.notes && <div><div className="text-xs uppercase text-muted-foreground">Observações</div><div>{sel.notes}</div></div>}
+              {sel.delivery_instructions && <div><div className="text-xs uppercase text-muted-foreground">Instruções de entrega</div><div>{sel.delivery_instructions}</div></div>}
+              {sel.card_message && <div><div className="text-xs uppercase text-muted-foreground">Mensagem do cartão</div><div>{sel.card_message}</div></div>}
+              {!sel.delivery_instructions && !sel.card_message && sel.notes && <div><div className="text-xs uppercase text-muted-foreground">Observações</div><div>{sel.notes}</div></div>}
               <div>
                 <div className="mb-1 text-xs uppercase text-muted-foreground">Status</div>
                 <Select value={sel.status} onValueChange={(v) => updateStatus(sel, v)}>

@@ -20,7 +20,20 @@ async function verifyAdmin(password: string) {
     _password: password,
     _ip: ip,
   });
-  if (error) throw new Error("Configuração indisponível");
+  if (error) {
+    // A tela mostra uma mensagem genérica de propósito — quem tenta invadir não
+    // precisa saber como a infraestrutura está montada. Mas o motivo real tem
+    // que ir para o log do servidor: sem isso, "Configuração indisponível"
+    // cobre desde chave de service role errada até banco fora do ar, e não
+    // sobra nada para investigar (foi o que aconteceu em 2026-08-04).
+    console.error("[admin] verify_admin_login falhou", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error("Configuração indisponível");
+  }
   if (data === "locked") {
     throw new Error("Muitas tentativas de login. Aguarde alguns minutos e tente novamente.");
   }

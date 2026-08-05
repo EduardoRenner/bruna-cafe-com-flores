@@ -461,14 +461,25 @@ describe("createCheckout", () => {
     expect(corpo.payer).not.toHaveProperty("email");
   });
 
+  // `account_money` aparece em toda forma porque a API recusa excluí-lo
+  // (400 "account_money cannot be excluded" em conta real). Ver TIPOS_EXCLUIVEIS.
   it.each([
-    ["cartao", ["credit_card", "debit_card"]],
-    ["pix", ["bank_transfer"]],
-    ["boleto", ["ticket"]],
-  ])("forma %s abre só %s no gateway", async (forma, esperados) => {
+    ["cartao", ["credit_card", "debit_card", "account_money"]],
+    ["pix", ["bank_transfer", "account_money"]],
+    ["boleto", ["ticket", "account_money"]],
+  ])("forma %s abre %s no gateway (saldo MP sempre junto)", async (forma, esperados) => {
     const corpos = responderPreferencia();
     await provider.createCheckout({ ...entrada, paymentMethod: forma });
     expect(tiposOferecidos(corpos[0]).sort()).toEqual([...esperados].sort());
+  });
+
+  it("nunca exclui account_money — a API real recusa e derruba a cobrança", async () => {
+    const corpos = responderPreferencia();
+    await provider.createCheckout({ ...entrada, paymentMethod: "pix" });
+    const excluidos: string[] = (
+      JSON.parse(corpos[0]).payment_methods?.excluded_payment_types ?? []
+    ).map((t: { id: string }) => t.id);
+    expect(excluidos).not.toContain("account_money");
   });
 
   it("forma desconhecida não restringe nada, em vez de travar o cliente fora", async () => {

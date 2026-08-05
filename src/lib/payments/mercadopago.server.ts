@@ -55,17 +55,24 @@ function paraCentavos(valor: number): number {
 }
 
 /**
- * Tipos de meio de pagamento do Mercado Pago no Brasil.
+ * Tipos de meio de pagamento que a gente pode EXCLUIR da preferência.
  *
- * `bank_transfer` é o Pix; `ticket` é o boleto; `account_money` é o saldo da
- * conta MP. Restringir é por EXCLUSÃO: a API não tem "inclua só isto".
+ * `bank_transfer` é o Pix; `ticket` é o boleto. Restringir é por EXCLUSÃO: a
+ * API não tem "inclua só isto", então listamos o que sai.
+ *
+ * `account_money` (saldo da conta MP) fica FORA desta lista de propósito. A
+ * conta real recusa excluí-lo — responde 400 "account_money cannot be
+ * excluded" e derruba a cobrança inteira (confirmado em produção 2026-08-04,
+ * BCF-1017). Passava no sandbox porque a conta de teste não aplicava essa
+ * regra. Consequência: quem escolhe Pix (ou qualquer forma) também vê a opção
+ * de saldo MP. É inofensivo — o dinheiro cai igual, e quase ninguém tem saldo
+ * ali; melhor isso do que não conseguir cobrar.
  */
-const TODOS_OS_TIPOS = [
+const TIPOS_EXCLUIVEIS = [
   "credit_card",
   "debit_card",
   "ticket",
   "bank_transfer",
-  "account_money",
 ] as const;
 
 /** Quais tipos do gateway correspondem a cada forma escolhida no site. */
@@ -86,7 +93,7 @@ function restringirMeios(forma: string): { excluded_payment_types: { id: string 
   const permitidos = TIPOS_POR_FORMA[forma];
   if (!permitidos) return undefined;
   return {
-    excluded_payment_types: TODOS_OS_TIPOS.filter(
+    excluded_payment_types: TIPOS_EXCLUIVEIS.filter(
       (t) => !permitidos.includes(t),
     ).map((id) => ({ id })),
   };

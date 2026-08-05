@@ -310,7 +310,19 @@ function PedidosAdmin() {
                   </div>
                 </div>
               )}
-              <div><div className="text-xs uppercase text-muted-foreground">Pagamento</div><div className="capitalize">{sel.payment_method}</div></div>
+              <div>
+                <div className="text-xs uppercase text-muted-foreground">Pagamento</div>
+                <div className="capitalize">{sel.payment_method}</div>
+                {/* Sem isto, quem separa o pedido não sabe quanto de troco levar. */}
+                {sel.payment_method === "dinheiro" && sel.change_for != null && (
+                  <div className="mt-1 text-sm font-medium text-rose-deep">
+                    Levar troco para {formatBRL(Number(sel.change_for))}
+                    <span className="ml-1 font-normal text-muted-foreground">
+                      (troco: {formatBRL(Number(sel.change_for) - Number(sel.total))})
+                    </span>
+                  </div>
+                )}
+              </div>
               <div>
                 <div className="mb-1 text-xs uppercase text-muted-foreground">Status do pagamento</div>
                 <Select value={sel.payment_status ?? "pendente"} onValueChange={(v) => updatePayment(sel, v)}>

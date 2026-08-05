@@ -30,7 +30,12 @@ function formatDateBR(iso: string): string {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-const PAYMENT_DB: Record<string, string> = { Dinheiro: "dinheiro", Pix: "pix", "Cartão": "cartao" };
+const PAYMENT_DB: Record<string, string> = {
+  Dinheiro: "dinheiro",
+  Pix: "pix",
+  "Cartão": "cartao",
+  Boleto: "boleto",
+};
 
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -50,6 +55,10 @@ function CheckoutPage() {
   });
   const podePagarOnline = pagamentoOnline?.habilitado === true;
   const [modoFinalizacao, setModoFinalizacao] = useState<"whatsapp" | "online">("whatsapp");
+  const [formaPagamento, setFormaPagamento] = useState("Pix");
+  // Dinheiro é acerto na entrega: não existe "pagar agora" para ele, e deixar
+  // a opção na tela só levaria o cliente a pagar duas vezes.
+  const formaPermiteOnline = formaPagamento !== "Dinheiro";
 
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [zoneId, setZoneId] = useState<string>("");
@@ -133,8 +142,31 @@ function CheckoutPage() {
 
     const deliveryInstructions = String(fd.get("delivery_instructions") ?? "").trim();
     const cardMessage = String(fd.get("card_message") ?? "").trim().slice(0, 200);
-    const paymentLabel = String(fd.get("payment") ?? "Pix");
+    // Fonte única: a mesma variável que decide se aparece "Pagar agora", se o
+    // campo de troco aparece e quais meios o gateway abre. Ler o form aqui
+    // criaria um segundo caminho para o mesmo dado, livre para divergir.
+    const paymentLabel = formaPagamento;
     const paymentDb = PAYMENT_DB[paymentLabel] ?? "pix";
+
+    // Troco: só em dinheiro, e nunca menor que o total — senão não é troco.
+    let changeFor: number | null = null;
+    if (paymentDb === "dinheiro") {
+      const bruto = String(fd.get("changeFor") ?? "").trim();
+      if (bruto) {
+        const valor = Number(bruto.replace(",", "."));
+        if (!Number.isFinite(valor) || valor <= 0) {
+          toast.error("Valor de troco inválido.");
+          setSubmitting(false);
+          return;
+        }
+        if (valor < total) {
+          toast.error(`O troco precisa ser pelo menos o total do pedido (${formatBRL(total)}).`);
+          setSubmitting(false);
+          return;
+        }
+        changeFor = valor;
+      }
+    }
 
     let orderNumber = "BCF-" + Date.now().toString().slice(-6);
     // Fallback com os valores do carrinho (usado só se a chamada ao servidor falhar);
@@ -155,7 +187,8 @@ function CheckoutPage() {
     // Abre a aba do WhatsApp já dentro do clique (evita bloqueio de popup).
     // No pagamento online não abrimos nada: o cliente é levado ao gateway na
     // própria aba, senão ele perde de vista a tela onde está pagando.
-    const pagarOnline = podePagarOnline && modoFinalizacao === "online";
+    const pagarOnline =
+      podePagarOnline && formaPermiteOnline && modoFinalizacao === "online";
     const waWindow = pagarOnline ? null : window.open("", "_blank");
     let orderToken: string | null = null;
 
@@ -171,6 +204,7 @@ function CheckoutPage() {
           delivery_date: dateRaw || null,
           delivery_time: timeRaw || null,
           payment_method: paymentDb,
+          change_for: changeFor,
           delivery_instructions: deliveryInstructions || null,
           card_message: cardMessage || null,
           items: dbItems,
@@ -491,8 +525,13 @@ function CheckoutPage() {
             {/* Pagamento */}
             <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-card-soft">
               <h2 className="font-display text-xl">Pagamento</h2>
-              <RadioGroup name="payment" defaultValue="Pix" className="mt-4 grid gap-3 md:grid-cols-3">
-                {["Dinheiro", "Pix", "Cartão"].map((m) => (
+              <RadioGroup
+                name="payment"
+                value={formaPagamento}
+                onValueChange={setFormaPagamento}
+                className="mt-4 grid gap-3 md:grid-cols-4"
+              >
+                {["Dinheiro", "Pix", "Cartão", "Boleto"].map((m) => (
                   <label
                     key={m}
                     className="flex cursor-pointer items-center gap-2 rounded-xl border border-border p-4 hover:border-rose-deep/50"
@@ -502,11 +541,34 @@ function CheckoutPage() {
                   </label>
                 ))}
               </RadioGroup>
+
+              {/* Troco só faz sentido em dinheiro — nas outras formas o campo
+                  seria ruído para o cliente e para quem separa o pedido. */}
+              {formaPagamento === "Dinheiro" && (
+                <div className="mt-4">
+                  <label htmlFor="changeFor" className="text-sm font-medium">
+                    Troco para quanto? <span className="text-muted-foreground">(opcional)</span>
+                  </label>
+                  <Input
+                    id="changeFor"
+                    name="changeFor"
+                    type="number"
+                    inputMode="decimal"
+                    min={total}
+                    step="0.01"
+                    className="mt-2"
+                    placeholder={`Deixe em branco se tiver o valor certo (${formatBRL(total)})`}
+                  />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    A gente já separa o troco e leva junto com o pedido.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Só aparece quando existe gateway configurado. Sem conta ligada,
                 o checkout continua sendo exatamente o de sempre. */}
-            {podePagarOnline && (
+            {podePagarOnline && formaPermiteOnline && (
               <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-card-soft">
                 <h2 className="font-display text-xl">Como você quer finalizar?</h2>
                 <div className="mt-4 grid gap-3">
@@ -528,7 +590,7 @@ function CheckoutPage() {
                     <span>
                       <span className="block font-medium">Pagar agora pelo site</span>
                       <span className="block text-sm text-muted-foreground">
-                        Pix, cartão ou boleto em ambiente seguro do Mercado Pago.
+                        {formaPagamento} em ambiente seguro do Mercado Pago.
                       </span>
                     </span>
                   </label>
@@ -561,7 +623,7 @@ function CheckoutPage() {
             <Button type="submit" size="lg" className="w-full bg-rose-deep text-primary-foreground" disabled={submitting}>
               {submitting ? (
                 "Preparando pedido…"
-              ) : podePagarOnline && modoFinalizacao === "online" ? (
+              ) : podePagarOnline && formaPermiteOnline && modoFinalizacao === "online" ? (
                 <>
                   <CreditCard className="mr-2 h-4 w-4" /> Ir para o pagamento
                 </>

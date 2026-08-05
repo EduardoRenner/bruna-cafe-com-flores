@@ -36,11 +36,15 @@ export const Route = createFileRoute("/api/webhooks/mercadopago")({
         };
 
         // O id do pagamento pode vir no corpo ou na query, dependendo do tipo
-        // de notificação configurada no painel do Mercado Pago.
-        const dataId =
-          corpo.data?.id != null
-            ? String(corpo.data.id)
-            : url.searchParams.get("data.id") ?? url.searchParams.get("id");
+        // de notificação configurada no painel do Mercado Pago — e os dois nem
+        // sempre trazem o mesmo valor. Passamos ambos: qual deles entra no
+        // manifesto assinado não está documentado, e rejeitar notificação
+        // legítima por ter escolhido o errado sai caro.
+        const idDoCorpo = corpo.data?.id != null ? String(corpo.data.id) : null;
+        const idDaQuery =
+          url.searchParams.get("data.id") ?? url.searchParams.get("id");
+
+        const dataId = idDoCorpo ?? idDaQuery;
 
         const { processarWebhook } = await import("@/lib/payments/service.server");
 
@@ -48,6 +52,7 @@ export const Route = createFileRoute("/api/webhooks/mercadopago")({
           signatureHeader: request.headers.get("x-signature"),
           requestId: request.headers.get("x-request-id"),
           dataId,
+          dataIdAlternativo: idDoCorpo && idDaQuery !== idDoCorpo ? idDaQuery : null,
           eventType: corpo.type ?? corpo.action ?? url.searchParams.get("type"),
           payload,
         });

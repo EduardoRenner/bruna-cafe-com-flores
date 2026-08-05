@@ -12,7 +12,12 @@ import type {
   PaymentProvider,
   PaymentStatus,
 } from "./types";
-import type { PaymentConfig } from "./config.server";
+import {
+  descreverConfigParaLog,
+  fingerprintSegredo,
+  verificarCoerenciaAmbiente,
+  type PaymentConfig,
+} from "./config.server";
 
 const API = "https://api.mercadopago.com";
 
@@ -49,6 +54,65 @@ function paraCentavos(valor: number): number {
   return Math.round(valor * 100);
 }
 
+/**
+ * Tipos de meio de pagamento do Mercado Pago no Brasil.
+ *
+ * `bank_transfer` é o Pix; `ticket` é o boleto; `account_money` é o saldo da
+ * conta MP. Restringir é por EXCLUSÃO: a API não tem "inclua só isto".
+ */
+const TODOS_OS_TIPOS = [
+  "credit_card",
+  "debit_card",
+  "ticket",
+  "bank_transfer",
+  "account_money",
+] as const;
+
+/** Quais tipos do gateway correspondem a cada forma escolhida no site. */
+const TIPOS_POR_FORMA: Record<string, readonly string[]> = {
+  cartao: ["credit_card", "debit_card"],
+  pix: ["bank_transfer"],
+  boleto: ["ticket"],
+};
+
+/**
+ * Monta a restrição de meios para a preferência.
+ *
+ * Forma desconhecida devolve `undefined` — ou seja, nenhuma restrição, o
+ * checkout completo. Melhor oferecer meios demais do que travar um cliente
+ * fora do pagamento por causa de um valor inesperado no banco.
+ */
+function restringirMeios(forma: string): { excluded_payment_types: { id: string }[] } | undefined {
+  const permitidos = TIPOS_POR_FORMA[forma];
+  if (!permitidos) return undefined;
+  return {
+    excluded_payment_types: TODOS_OS_TIPOS.filter(
+      (t) => !permitidos.includes(t),
+    ).map((id) => ({ id })),
+  };
+}
+
+/** Formato do pagamento na API do Mercado Pago, igual na consulta e na busca. */
+type RespPagamento = {
+  id: number | string;
+  status: string;
+  status_detail?: string;
+  transaction_amount: number;
+  external_reference?: string | null;
+  payment_method_id?: string | null;
+};
+
+function traduzirPagamento(p: RespPagamento): GatewayPayment {
+  return {
+    providerPaymentId: String(p.id),
+    status: traduzirStatus(p.status),
+    amountCents: paraCentavos(p.transaction_amount),
+    externalReference: p.external_reference ?? null,
+    method: p.payment_method_id ?? null,
+    statusDetail: p.status_detail ?? null,
+  };
+}
+
 function comparaSegura(a: string, b: string): boolean {
   const ba = Buffer.from(a, "utf8");
   const bb = Buffer.from(b, "utf8");
@@ -56,6 +120,17 @@ function comparaSegura(a: string, b: string): boolean {
   // informação, mas o tamanho do hash é público (SHA-256 hex = 64 chars).
   if (ba.length !== bb.length) return false;
   return timingSafeEqual(ba, bb);
+}
+
+/**
+ * E-mail identificável o suficiente para conferir "é o comprador que eu usei?",
+ * sem despejar o e-mail do cliente no log de deploy.
+ */
+function mascararEmail(email: string | null | undefined): string {
+  if (!email) return "(sem e-mail)";
+  const [local, dominio] = email.split("@");
+  if (!dominio) return "(inválido)";
+  return `${local.slice(0, 2)}***@${dominio}`;
 }
 
 /** Janela de tolerância do timestamp do webhook, contra reenvio de notificação antiga. */
@@ -89,6 +164,25 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
     async createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession> {
       type Resp = { id: string; init_point: string; sandbox_init_point: string };
 
+      // O erro "uma das partes é de teste" é decidido dentro do checkout do
+      // Mercado Pago, depois do redirect — daqui a criação da preferência
+      // parece um sucesso. Este log é o que sobra para reconstruir o que foi
+      // enviado: qual token (por impressão digital), qual ambiente e qual
+      // comprador. Sem ele, o único sintoma é a tela de erro no navegador.
+      console.info("[pagamento] criando preferência", {
+        ...descreverConfigParaLog(cfg),
+        paymentId: input.paymentId,
+        orderNumber: input.orderNumber,
+        amountCents: input.amountCents,
+        payerEmail: mascararEmail(input.payer.email),
+        notificationUrl: input.notificationUrl,
+        returnUrl: input.returnUrl,
+      });
+
+      for (const aviso of verificarCoerenciaAmbiente(cfg)) {
+        console.warn("[pagamento] ambiente possivelmente incoerente:", aviso);
+      }
+
       const pref = await chamar<Resp>("/checkout/preferences", {
         method: "POST",
         body: JSON.stringify({
@@ -116,37 +210,55 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
           },
           auto_return: "approved",
           statement_descriptor: "BRUNACAFEFLORES",
+          ...(restringirMeios(input.paymentMethod)
+            ? { payment_methods: restringirMeios(input.paymentMethod) }
+            : {}),
         }),
+      });
+
+      const redirectUrl = cfg.sandbox ? pref.sandbox_init_point : pref.init_point;
+
+      console.info("[pagamento] preferência criada", {
+        preferenceId: pref.id,
+        paymentId: input.paymentId,
+        // O prefixo do id da preferência é o user id da conta vendedora. É o
+        // jeito mais direto de conferir para QUAL conta a cobrança foi criada.
+        contaVendedora: pref.id.split("-")[0] ?? "(desconhecida)",
+        initPointUsado: cfg.sandbox ? "sandbox_init_point" : "init_point",
+        // Se o campo escolhido vier vazio, o cliente é redirecionado para
+        // lugar nenhum — vale saber antes de investigar o navegador.
+        redirectVazio: !redirectUrl,
       });
 
       return {
         providerPreferenceId: pref.id,
-        redirectUrl: cfg.sandbox ? pref.sandbox_init_point : pref.init_point,
+        redirectUrl,
       };
     },
 
     async fetchPayment(providerPaymentId: string): Promise<GatewayPayment> {
-      type Resp = {
-        id: number | string;
-        status: string;
-        status_detail?: string;
-        transaction_amount: number;
-        external_reference?: string | null;
-        payment_method_id?: string | null;
-      };
-
-      const p = await chamar<Resp>(
+      const p = await chamar<RespPagamento>(
         `/v1/payments/${encodeURIComponent(providerPaymentId)}`,
       );
+      return traduzirPagamento(p);
+    },
 
-      return {
-        providerPaymentId: String(p.id),
-        status: traduzirStatus(p.status),
-        amountCents: paraCentavos(p.transaction_amount),
-        externalReference: p.external_reference ?? null,
-        method: p.payment_method_id ?? null,
-        statusDetail: p.status_detail ?? null,
-      };
+    async findPaymentByReference(
+      externalReference: string,
+    ): Promise<GatewayPayment | null> {
+      type Resp = { results?: RespPagamento[] };
+
+      const busca = await chamar<Resp>(
+        `/v1/payments/search?external_reference=${encodeURIComponent(externalReference)}&sort=date_created&criteria=desc`,
+      );
+      const resultados = busca.results ?? [];
+      if (resultados.length === 0) return null;
+
+      // Uma mesma referência pode ter várias tentativas (cartão recusado e
+      // depois aprovado, por exemplo). O aprovado é o que importa; sem
+      // nenhum aprovado, vale o mais recente.
+      const aprovado = resultados.find((p) => p.status === "approved");
+      return traduzirPagamento(aprovado ?? resultados[0]);
     },
 
     /**
@@ -156,7 +268,12 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
      * "pagamento aprovado" e receber flores de graça. O Mercado Pago assina
      * `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` com o segredo da conta.
      */
-    verifyWebhookSignature({ signatureHeader, requestId, dataId }): boolean {
+    verifyWebhookSignature({
+      signatureHeader,
+      requestId,
+      dataId,
+      dataIdAlternativo,
+    }): boolean {
       if (!signatureHeader || !dataId) return false;
 
       // Formato: "ts=1704908010,v1=abc123..."
@@ -177,15 +294,42 @@ export function createMercadoPagoProvider(cfg: PaymentConfig): PaymentProvider {
       // O ts do MP vem em segundos; toleramos relógio adiantado por 1 min.
       if (Math.abs(agora - tsNum) > TOLERANCIA_TIMESTAMP_S) return false;
 
-      // O Mercado Pago normaliza id alfanumérico para minúsculas no manifesto.
-      const id = /^[a-zA-Z0-9]+$/.test(dataId) ? dataId.toLowerCase() : dataId;
-      const manifesto = `id:${id};request-id:${requestId ?? ""};ts:${ts};`;
+      const confere = (candidato: string): boolean => {
+        // O Mercado Pago normaliza id alfanumérico para minúsculas no manifesto.
+        const id = /^[a-zA-Z0-9]+$/.test(candidato)
+          ? candidato.toLowerCase()
+          : candidato;
+        const manifesto = `id:${id};request-id:${requestId ?? ""};ts:${ts};`;
+        const esperado = createHmac("sha256", cfg.webhookSecret)
+          .update(manifesto)
+          .digest("hex");
+        return comparaSegura(esperado, v1!.toLowerCase());
+      };
 
-      const esperado = createHmac("sha256", cfg.webhookSecret)
-        .update(manifesto)
-        .digest("hex");
+      if (confere(dataId)) return true;
 
-      return comparaSegura(esperado, v1.toLowerCase());
+      // Corpo e query podem trazer data.id diferentes. Tentar o segundo
+      // candidato custa um HMAC e evita rejeitar notificação legítima.
+      if (dataIdAlternativo && dataIdAlternativo !== dataId) {
+        if (confere(dataIdAlternativo)) {
+          console.warn(
+            "[pagamento] assinatura confere com o data.id alternativo, não com o principal",
+            { usado: dataIdAlternativo, principal: dataId },
+          );
+          return true;
+        }
+      }
+
+      // Nenhum candidato bateu. A causa quase sempre é o segredo errado, e sem
+      // a impressão digital não há como saber QUAL segredo está rodando.
+      console.warn("[pagamento] nenhum candidato de assinatura conferiu", {
+        webhookSecretFingerprint: fingerprintSegredo(cfg.webhookSecret),
+        dataId,
+        dataIdAlternativo: dataIdAlternativo ?? "(ausente)",
+        requestId: requestId ?? "(ausente)",
+        ts,
+      });
+      return false;
     },
   };
 }

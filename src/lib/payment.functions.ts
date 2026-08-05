@@ -15,6 +15,8 @@ const MENSAGENS: Record<string, string> = {
   desligado: "Pagamento online indisponível no momento. Finalize pelo WhatsApp.",
   pedido_invalido: "Não foi possível localizar este pedido.",
   ja_pago: "Este pedido já está pago.",
+  forma_nao_online:
+    "Este pedido foi feito para pagamento em dinheiro na entrega. Para pagar online, faça um novo pedido escolhendo Pix, cartão ou boleto.",
   excesso_tentativas:
     "Muitas tentativas de pagamento para este pedido. Fale com a loja pelo WhatsApp.",
   falha_gateway:
@@ -64,6 +66,16 @@ export const consultarPedidoPublico = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<StatusPublico> => {
     const token = typeof data?.token === "string" ? data.token.trim() : "";
     if (!/^[a-f0-9]{48}$/.test(token)) return null;
+
+    // Antes de responder, pergunta ao gateway se o pagamento saiu do lugar.
+    // É aqui que o cliente cai voltando do checkout, então é o momento mais
+    // barato para consertar um webhook que não chegou — e sem isso o pedido
+    // ficaria pendente indefinidamente, mesmo pago. A função é interna e não
+    // lança: se o gateway estiver fora, a página carrega igual.
+    const { reconciliarPagamentoDoPedido } = await import(
+      "@/lib/payments/service.server"
+    );
+    await reconciliarPagamentoDoPedido(token);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: linhas, error } = await supabaseAdmin.rpc("get_order_public_status", {

@@ -21,12 +21,20 @@ export type CreateOrderInput = {
   delivery_address?: Record<string, string> | null;
   delivery_date?: string | null;
   delivery_time?: string | null;
-  payment_method: string; // 'pix' | 'dinheiro' | 'cartao'
+  payment_method: string; // 'pix' | 'dinheiro' | 'cartao' | 'boleto'
+  /** "Troco para quanto", em reais. Só vale com payment_method 'dinheiro'. */
+  change_for?: number | null;
   notes?: string | null;
   delivery_instructions?: string | null;
   card_message?: string | null;
   items: OrderItemInput[];
 };
+
+/** Formas aceitas. Espelha o trigger validate_new_order — os dois têm de bater. */
+export const FORMAS_PAGAMENTO = ["pix", "dinheiro", "cartao", "boleto"] as const;
+
+/** Só estas podem ser cobradas pelo gateway; dinheiro é acerto na entrega. */
+export const FORMAS_ONLINE = ["pix", "cartao", "boleto"] as const;
 
 export type CreateOrderResult = {
   orderNumber: string | null;
@@ -45,6 +53,17 @@ const DELIVERY_FEE_LABEL = "Taxa de entrega";
 
 /** Erro esperado (mensagem segura para mostrar ao cliente final ou ao agente). */
 export class OrderValidationError extends Error {}
+
+/**
+ * Troco utilizável.
+ *
+ * Não confere contra o total aqui de propósito: o total só é conhecido depois
+ * de recalculado a partir do catálogo, e quem faz essa conferência é o trigger
+ * no banco, onde ela vale para todos os caminhos de criação de pedido.
+ */
+function trocoValido(valor: number | null | undefined): valor is number {
+  return typeof valor === "number" && Number.isFinite(valor) && valor > 0;
+}
 
 export async function criarPedido(
   data: CreateOrderInput,
@@ -75,7 +94,7 @@ export async function criarPedido(
   if (data.delivery_type !== "delivery" && data.delivery_type !== "pickup") {
     throw new OrderValidationError("Tipo de entrega inválido");
   }
-  if (!["pix", "dinheiro", "cartao"].includes(data.payment_method)) {
+  if (!(FORMAS_PAGAMENTO as readonly string[]).includes(data.payment_method)) {
     throw new OrderValidationError("Forma de pagamento inválida");
   }
 
@@ -141,6 +160,12 @@ export async function criarPedido(
       delivery_date: data.delivery_date || null,
       delivery_time: data.delivery_time || null,
       payment_method: data.payment_method,
+      // Só faz sentido com dinheiro; o trigger zera nos demais casos de
+      // qualquer forma, mas mandar já limpo evita ruído no que é gravado.
+      change_for:
+        data.payment_method === "dinheiro" && trocoValido(data.change_for)
+          ? data.change_for
+          : null,
       // `notes` continua aceito por compatibilidade (ex.: agente do n8n que
       // ainda não separa os dois campos); o checkout do site já manda os
       // campos novos direto.

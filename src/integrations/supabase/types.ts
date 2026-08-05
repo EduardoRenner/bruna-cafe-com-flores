@@ -96,6 +96,7 @@ export type Database = {
           items: Json
           notes: string | null
           order_number: string
+          change_for: number | null
           payment_method: string
           payment_status: string
           public_token: string
@@ -121,6 +122,7 @@ export type Database = {
           items: Json
           notes?: string | null
           order_number: string
+          change_for?: number | null
           payment_method: string
           payment_status?: string
           public_token?: string
@@ -146,6 +148,7 @@ export type Database = {
           items?: Json
           notes?: string | null
           order_number?: string
+          change_for?: number | null
           payment_method?: string
           payment_status?: string
           public_token?: string
@@ -210,6 +213,7 @@ export type Database = {
           id: string
           method: string | null
           order_id: string
+          last_reconciled_at: string | null
           paid_at: string | null
           provider: string
           provider_payment_id: string | null
@@ -225,6 +229,7 @@ export type Database = {
           id?: string
           method?: string | null
           order_id: string
+          last_reconciled_at?: string | null
           paid_at?: string | null
           provider: string
           provider_payment_id?: string | null
@@ -240,6 +245,7 @@ export type Database = {
           id?: string
           method?: string | null
           order_id?: string
+          last_reconciled_at?: string | null
           paid_at?: string | null
           provider?: string
           provider_payment_id?: string | null

@@ -8,12 +8,28 @@
 //   3. Notificação repetida não gera efeito repetido.
 //   4. Valor divergente nunca vira "pago" sozinho.
 
+import { FORMAS_ONLINE } from "@/lib/orders/createOrderCore.server";
+import { store } from "@/lib/store-info";
 import { getPaymentConfig } from "./config.server";
 import { createMercadoPagoProvider } from "./mercadopago.server";
-import type { PaymentProvider } from "./types";
+import type { GatewayPayment, PaymentProvider } from "./types";
 
 function getProvider(): { provider: PaymentProvider; siteUrl: string } | null {
-  const cfg = getPaymentConfig();
+  let cfg;
+  try {
+    cfg = getPaymentConfig();
+  } catch (err) {
+    // getPaymentConfig lança de propósito: configuração pela metade não pode
+    // virar cobrança. Mas quem chama aqui precisa tratar "quebrado" como
+    // "desligado", e não deixar a exceção subir.
+    //
+    // Isto já custou caro uma vez: com SITE_URL malformada, o throw subia pela
+    // reconciliação até a página /pedido/<token> e derrubava exatamente a tela
+    // em que o cliente vai conferir o pagamento que acabou de fazer. Um erro
+    // de digitação numa variável de ambiente não pode ter esse alcance.
+    console.error("[pagamento] configuração inválida — tratando como desligado:", err);
+    return null;
+  }
   if (!cfg) return null;
   return { provider: createMercadoPagoProvider(cfg), siteUrl: cfg.siteUrl };
 }
@@ -21,9 +37,27 @@ function getProvider(): { provider: PaymentProvider; siteUrl: string } | null {
 /** Teto de tentativas por pedido, para o endpoint não virar gerador infinito de cobranças. */
 const MAX_TENTATIVAS_POR_PEDIDO = 10;
 
+/**
+ * Intervalo mínimo entre duas consultas ao gateway para o mesmo pagamento.
+ *
+ * Menor que o polling da página (5s) seria inútil; muito maior atrasaria a
+ * confirmação que o cliente está esperando na tela. 10s deixa a página
+ * resolver em uma ou duas atualizações e corta a rajada.
+ */
+const INTERVALO_RECONCILIACAO_MS = 10_000;
+
 export type CriarPagamentoResultado =
   | { ok: true; redirectUrl: string }
-  | { ok: false; motivo: "desligado" | "pedido_invalido" | "ja_pago" | "excesso_tentativas" | "falha_gateway" };
+  | {
+      ok: false;
+      motivo:
+        | "desligado"
+        | "pedido_invalido"
+        | "ja_pago"
+        | "excesso_tentativas"
+        | "falha_gateway"
+        | "forma_nao_online";
+    };
 
 /**
  * Cria um checkout para um pedido existente.
@@ -42,13 +76,23 @@ export async function criarPagamentoParaPedido(
 
   const { data: pedido, error: erroPedido } = await supabaseAdmin
     .from("orders")
-    .select("id, order_number, total, status, payment_status, customer_name, customer_email")
+    .select(
+      "id, order_number, total, status, payment_status, customer_name, customer_email, payment_method",
+    )
     .eq("public_token", orderPublicToken)
     .maybeSingle();
 
   if (erroPedido || !pedido) return { ok: false, motivo: "pedido_invalido" };
   if (pedido.payment_status === "pago") return { ok: false, motivo: "ja_pago" };
   if (pedido.status === "cancelado") return { ok: false, motivo: "pedido_invalido" };
+
+  // Dinheiro é acerto na entrega, não cobrança. Mesmo que alguém chame este
+  // endpoint direto com o token de um pedido em dinheiro, não abrimos cobrança
+  // — senão o cliente pagaria online um pedido que ele vai pagar de novo na
+  // porta, e a loja teria de estornar.
+  if (!(FORMAS_ONLINE as readonly string[]).includes(pedido.payment_method)) {
+    return { ok: false, motivo: "forma_nao_online" };
+  }
 
   const { count } = await supabaseAdmin
     .from("payments")
@@ -88,6 +132,7 @@ export async function criarPagamentoParaPedido(
         name: pedido.customer_name,
         email: pedido.customer_email,
       },
+      paymentMethod: pedido.payment_method,
       returnUrl: `${p.siteUrl}/pedido/${orderPublicToken}`,
       notificationUrl: `${p.siteUrl}/api/webhooks/mercadopago`,
     });
@@ -128,6 +173,8 @@ export async function processarWebhook(args: {
   signatureHeader: string | null;
   requestId: string | null;
   dataId: string | null;
+  /** Segundo candidato para o manifesto: corpo e query podem divergir. */
+  dataIdAlternativo?: string | null;
   eventType: string | null;
   payload: unknown;
 }): Promise<WebhookResultado> {
@@ -140,6 +187,7 @@ export async function processarWebhook(args: {
     signatureHeader: args.signatureHeader,
     requestId: args.requestId,
     dataId: args.dataId,
+    dataIdAlternativo: args.dataIdAlternativo ?? null,
   });
 
   // Chave de idempotência. Sem data.id não há o que processar.
@@ -183,30 +231,15 @@ export async function processarWebhook(args: {
       return "ignorado";
     }
 
-    const { data: resultado, error } = await supabaseAdmin.rpc("confirm_payment", {
-      _payment_id: pago.externalReference,
-      _provider_payment_id: pago.providerPaymentId,
-      _gateway_status: pago.status,
-      _gateway_amount_cents: pago.amountCents,
-      // A RPC gerada tipa estes como opcionais; null vira ausente.
-      _method: pago.method ?? undefined,
-      _status_detail: pago.statusDetail ?? undefined,
-    });
+    const { resultado, erro } = await aplicarConfirmacao(pago);
 
-    if (error) {
-      await marcarProcessado(eventoId, p.provider.name, error.message);
+    if (erro) {
+      await marcarProcessado(eventoId, p.provider.name, erro);
       return "erro";
     }
 
     await marcarProcessado(eventoId, p.provider.name, null, pago.externalReference);
-
-    if (resultado === "valor_divergente") {
-      console.error("[pagamento] VALOR DIVERGENTE — conferir manualmente", {
-        paymentId: pago.externalReference,
-      });
-      return "valor_divergente";
-    }
-    return resultado === "ja_processado" ? "ja_processado" : "aplicado";
+    return resultado;
   } catch (err) {
     console.error("[pagamento] falha ao processar webhook:", err);
     await marcarProcessado(
@@ -214,6 +247,210 @@ export async function processarWebhook(args: {
       p.provider.name,
       err instanceof Error ? err.message : String(err),
     );
+    return "erro";
+  }
+}
+
+/**
+ * Aplica no banco o que o gateway confirmou.
+ *
+ * Um único caminho para os dois gatilhos — o webhook e a reconciliação — para
+ * que "marcar como pago" signifique exatamente a mesma coisa nos dois. Se
+ * fossem implementações separadas, um dia uma delas ganharia uma regra que a
+ * outra não tem, e o pedido ficaria diferente dependendo de quem chegou antes.
+ */
+async function aplicarConfirmacao(
+  pago: GatewayPayment,
+): Promise<{ resultado: WebhookResultado; erro?: string }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: resultado, error } = await supabaseAdmin.rpc("confirm_payment", {
+    _payment_id: pago.externalReference!,
+    _provider_payment_id: pago.providerPaymentId,
+    _gateway_status: pago.status,
+    _gateway_amount_cents: pago.amountCents,
+    // A RPC gerada tipa estes como opcionais; null vira ausente.
+    _method: pago.method ?? undefined,
+    _status_detail: pago.statusDetail ?? undefined,
+  });
+
+  if (error) return { resultado: "erro", erro: error.message };
+
+  if (resultado === "valor_divergente") {
+    console.error("[pagamento] VALOR DIVERGENTE — conferir manualmente", {
+      paymentId: pago.externalReference,
+    });
+    return { resultado: "valor_divergente" };
+  }
+
+  if (resultado === "ja_processado") return { resultado: "ja_processado" };
+
+  // Só avisa quando ESTA chamada foi a que confirmou. A idempotência da RPC
+  // garante que uma notificação reenviada devolve "ja_processado" e não gera
+  // um segundo WhatsApp para a loja.
+  if (pago.status === "pago") {
+    await avisarLojaPagamentoConfirmado(pago.externalReference!);
+  }
+
+  return { resultado: "aplicado" };
+}
+
+/**
+ * Avisa a loja no WhatsApp que um pedido foi pago.
+ *
+ * Nunca propaga erro: falha ao notificar não pode derrubar a confirmação do
+ * pagamento. O evento já foi marcado como processado neste ponto, então um
+ * throw aqui faria o gateway reenviar a notificação para sempre sem nunca
+ * conseguir aplicá-la — o pedido ficaria pendente por causa de uma mensagem.
+ */
+async function avisarLojaPagamentoConfirmado(paymentId: string): Promise<void> {
+  try {
+    const { getWhatsAppConfig } = await import("@/lib/whatsapp/config.server");
+    const cfg = getWhatsAppConfig();
+    if (!cfg) return; // Agente desligado: nada a fazer.
+
+    const destino =
+      process.env.WHATSAPP_NOTIFICACAO_TO?.trim() || store.whatsappDigits;
+    if (!destino) return;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: pagamento } = await supabaseAdmin
+      .from("payments")
+      .select("amount_cents, method, orders(order_number, customer_name, delivery_type)")
+      .eq("id", paymentId)
+      .maybeSingle();
+
+    const pedido = pagamento?.orders as
+      | { order_number: string; customer_name: string; delivery_type: string | null }
+      | null
+      | undefined;
+    if (!pedido) return;
+
+    const valor = ((pagamento?.amount_cents ?? 0) / 100).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+    const { sendWhatsAppText } = await import("@/lib/whatsapp/meta.server");
+    await sendWhatsAppText(
+      cfg,
+      destino,
+      `💐 Pagamento confirmado\n\n` +
+        `Pedido ${pedido.order_number}\n` +
+        `Cliente: ${pedido.customer_name}\n` +
+        `Valor: ${valor}\n` +
+        (pagamento?.method ? `Forma: ${pagamento.method}\n` : "") +
+        (pedido.delivery_type === "retirada" ? `Retirada na loja\n` : "") +
+        `\nO pedido já entrou em preparo no painel.`,
+    );
+  } catch (err) {
+    console.error("[pagamento] falha ao avisar a loja (pagamento segue confirmado):", err);
+  }
+}
+
+export type ReconciliacaoResultado =
+  | "aplicado"
+  | "sem_mudanca"
+  | "nao_encontrado"
+  | "desligado"
+  | "erro";
+
+/**
+ * Pergunta ao gateway como está o pagamento deste pedido e aplica o resultado.
+ *
+ * Rede de segurança para quando o webhook não resolve — e ele falha de formas
+ * silenciosas: URL de notificação apontando para outro ambiente, assinatura
+ * que não confere, notificação simplesmente perdida. Sem isto, um pagamento
+ * aprovado de verdade fica pendente até alguém conferir na mão.
+ *
+ * Consulta pelo nosso `payments.id`, que mandamos ao gateway como referência
+ * externa — então não depende de ter recebido nenhum id do lado deles.
+ */
+export async function reconciliarPagamentoDoPedido(
+  orderPublicToken: string,
+): Promise<ReconciliacaoResultado> {
+  // NUNCA lança. Quem chama isto está no meio de servir uma página ao cliente;
+  // reconciliar é um bônus oportunista, e nenhum problema aqui — gateway fora,
+  // banco lento, variável de ambiente errada — pode impedir o pedido de
+  // aparecer na tela. O try envolve tudo, inclusive a leitura de configuração,
+  // porque foi justamente ela que escapou da primeira versão.
+  try {
+    return await reconciliar(orderPublicToken);
+  } catch (err) {
+    console.error("[pagamento] falha ao reconciliar:", err);
+    return "erro";
+  }
+}
+
+async function reconciliar(
+  orderPublicToken: string,
+): Promise<ReconciliacaoResultado> {
+  const p = getProvider();
+  if (!p) return "desligado";
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: pedido } = await supabaseAdmin
+    .from("orders")
+    .select("id, payment_status")
+    .eq("public_token", orderPublicToken)
+    .maybeSingle();
+
+  if (!pedido) return "nao_encontrado";
+  // Já resolvido: não custa nada ao gateway perguntar de novo.
+  if (pedido.payment_status === "pago") return "sem_mudanca";
+
+  // Só tentativas ainda em aberto. Uma recusada continua recusada; reconsultar
+  // todas transformaria cada visita à página numa rajada de chamadas.
+  //
+  // O corte por last_reconciled_at é o freio: a página do pedido é pública
+  // para quem tem o token, e sem ele um laço de requisições viraria uma
+  // rajada contra a API do gateway — derrubando o pagamento para todo mundo.
+  const limite = new Date(Date.now() - INTERVALO_RECONCILIACAO_MS).toISOString();
+  const { data: pagamentos } = await supabaseAdmin
+    .from("payments")
+    .select("id")
+    .eq("order_id", pedido.id)
+    .eq("status", "iniciado")
+    .or(`last_reconciled_at.is.null,last_reconciled_at.lt.${limite}`);
+
+  if (!pagamentos || pagamentos.length === 0) return "sem_mudanca";
+
+  // Marca ANTES de consultar. Se marcasse depois, duas requisições simultâneas
+  // passariam as duas pelo filtro e o freio não seguraria nada.
+  await supabaseAdmin
+    .from("payments")
+    .update({ last_reconciled_at: new Date().toISOString() })
+    .in(
+      "id",
+      pagamentos.map((p) => p.id),
+    );
+
+  try {
+    for (const pagamento of pagamentos) {
+      const doGateway = await p.provider.findPaymentByReference(pagamento.id);
+      // Sem pagamento do lado deles = cliente abriu o checkout e não pagou.
+      if (!doGateway) continue;
+      if (doGateway.status === "iniciado") continue;
+
+      const { resultado } = await aplicarConfirmacao({
+        ...doGateway,
+        externalReference: pagamento.id,
+      });
+      if (resultado === "aplicado" || resultado === "valor_divergente") {
+        console.info("[pagamento] reconciliação aplicou status do gateway", {
+          paymentId: pagamento.id,
+          status: doGateway.status,
+          resultado,
+        });
+        return "aplicado";
+      }
+    }
+    return "sem_mudanca";
+  } catch (err) {
+    // Reconciliação é oportunista: se o gateway está fora do ar, a página do
+    // pedido ainda precisa carregar.
+    console.error("[pagamento] falha ao reconciliar:", err);
     return "erro";
   }
 }

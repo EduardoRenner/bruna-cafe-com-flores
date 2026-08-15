@@ -51,14 +51,14 @@ export function CartSheet() {
                         <button
                           onClick={() => remove(item.id)}
                           aria-label="Remover"
-                          className="text-muted-foreground hover:text-destructive"
+                          className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                       <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-border">
                         <button
-                          className="grid h-7 w-7 place-items-center hover:bg-muted"
+                          className="grid h-10 w-10 place-items-center hover:bg-muted"
                           onClick={() => setQty(item.id, item.quantity - 1)}
                           aria-label="Diminuir"
                         >
@@ -66,7 +66,7 @@ export function CartSheet() {
                         </button>
                         <span className="w-8 text-center text-sm">{item.quantity}</span>
                         <button
-                          className="grid h-7 w-7 place-items-center hover:bg-muted"
+                          className="grid h-10 w-10 place-items-center hover:bg-muted"
                           onClick={() => setQty(item.id, item.quantity + 1)}
                           aria-label="Aumentar"
                         >

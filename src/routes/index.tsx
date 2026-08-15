@@ -57,7 +57,7 @@ function Home() {
         <Petals count={12} />
         <div className="relative z-10 mx-auto max-w-5xl px-6 text-center text-primary-foreground">
           <p className="hero-fade-1 mb-5 text-sm uppercase tracking-[0.35em] text-primary-foreground/90 sm:text-base">Maravilha · SC</p>
-          <h1 className="hero-fade-1 text-balance font-display text-6xl leading-[1.05] sm:text-7xl md:text-8xl">
+          <h1 className="hero-fade-1 text-balance font-display text-4xl leading-[1.05] sm:text-6xl md:text-7xl lg:text-8xl">
             Transformamos <em className="italic text-rose">momentos</em> em memórias
           </h1>
           <p className="hero-fade-2 mx-auto mt-8 max-w-2xl text-lg text-primary-foreground/90 md:text-xl">

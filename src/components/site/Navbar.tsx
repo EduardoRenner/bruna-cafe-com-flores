@@ -78,7 +78,7 @@ export function Navbar() {
           <button
             onClick={() => setOpen(true)}
             aria-label="Abrir carrinho"
-            className={cn("relative rounded-md p-2", onHero ? "text-primary-foreground" : "text-foreground")}
+            className={cn("relative grid h-11 w-11 place-items-center rounded-md", onHero ? "text-primary-foreground" : "text-foreground")}
           >
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (
@@ -89,7 +89,7 @@ export function Navbar() {
           </button>
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
-            <button className={cn("rounded-md p-2", onHero ? "text-primary-foreground" : "text-foreground")} aria-label="Abrir menu">
+            <button className={cn("grid h-11 w-11 place-items-center rounded-md", onHero ? "text-primary-foreground" : "text-foreground")} aria-label="Abrir menu">
               <Menu className="h-5 w-5" />
             </button>
           </SheetTrigger>

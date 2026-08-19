@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MessageCircle, Plus } from "lucide-react";
+import { Search, MessageCircle, Plus, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchActiveProducts, categories, formatBRL, type Category } from "@/lib/products";
 import { whatsappLink } from "@/lib/store-info";
 import { useCart } from "@/lib/cart";
@@ -23,9 +25,22 @@ export const Route = createFileRoute("/catalogo")({
   component: Catalog,
 });
 
+// A ordem "Da loja" é a que a Bruna monta arrastando os produtos no painel;
+// as demais são só uma reordenação em cima dessa mesma lista.
+const ordenacoes = {
+  loja: { label: "Ordem da loja" },
+  "preco-asc": { label: "Menor preço" },
+  "preco-desc": { label: "Maior preço" },
+  "nome-asc": { label: "Nome (A–Z)" },
+  "nome-desc": { label: "Nome (Z–A)" },
+} as const;
+
+type Ordenacao = keyof typeof ordenacoes;
+
 function Catalog() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "Todos">("Todos");
+  const [ordem, setOrdem] = useState<Ordenacao>("loja");
   const { add, setOpen } = useCart();
 
   const { data: all, isLoading } = useQuery({
@@ -37,7 +52,7 @@ function Catalog() {
     // Busca também na descrição e na categoria: quem procura "rosa" ou "café"
     // espera achar itens mesmo quando a palavra não está no nome do produto.
     const term = q.trim().toLowerCase();
-    return (all ?? []).filter((p) => {
+    const lista = (all ?? []).filter((p) => {
       const okQ =
         !term ||
         p.name.toLowerCase().includes(term) ||
@@ -46,7 +61,22 @@ function Catalog() {
       const okC = cat === "Todos" || p.category === cat;
       return okQ && okC && p.active;
     });
-  }, [all, q, cat]);
+
+    // `sort` muta o array, mas `filter` acima já devolveu uma cópia — a lista
+    // do cache do react-query não é tocada.
+    switch (ordem) {
+      case "preco-asc":
+        return lista.sort((a, b) => a.price - b.price);
+      case "preco-desc":
+        return lista.sort((a, b) => b.price - a.price);
+      case "nome-asc":
+        return lista.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      case "nome-desc":
+        return lista.sort((a, b) => b.name.localeCompare(a.name, "pt-BR"));
+      default:
+        return lista;
+    }
+  }, [all, q, cat, ordem]);
 
   return (
     <div className="pt-24">
@@ -86,6 +116,21 @@ function Catalog() {
                 </button>
               ))}
             </div>
+          </div>
+          <div>
+            <Label htmlFor="ordenar" className="mb-2 flex items-center gap-1.5 font-display text-lg font-normal">
+              <ArrowUpDown className="h-4 w-4 text-rose-deep" /> Ordenar por
+            </Label>
+            <Select value={ordem} onValueChange={(v) => setOrdem(v as Ordenacao)}>
+              <SelectTrigger id="ordenar" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(ordenacoes) as Ordenacao[]).map((k) => (
+                  <SelectItem key={k} value={k}>{ordenacoes[k].label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </aside>
 

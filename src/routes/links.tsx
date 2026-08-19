@@ -65,7 +65,7 @@ function LinksPage() {
               <MessageCircle className="h-5 w-5" />
             </span>
             <span className="flex-1">
-              <span className="block font-display text-lg">Fale conosco no Zap</span>
+              <span className="block font-display text-lg">Fale conosco no WhatsApp</span>
               <span className="block text-sm text-primary-foreground/75">Tire dúvidas e monte seu pedido</span>
             </span>
           </a>

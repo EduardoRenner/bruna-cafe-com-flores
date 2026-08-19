@@ -60,7 +60,10 @@ function Home() {
           <h1 className="hero-fade-1 text-balance font-display text-4xl leading-[1.05] sm:text-6xl md:text-7xl lg:text-8xl">
             Transformamos <em className="italic text-rose">momentos</em> em memórias
           </h1>
-          <p className="hero-fade-2 mx-auto mt-8 max-w-2xl text-lg text-primary-foreground/90 md:text-xl">
+          <p className="hero-fade-2 mt-5 font-display text-xl italic text-rose sm:text-2xl">
+            “{store.motto}”
+          </p>
+          <p className="hero-fade-2 mx-auto mt-6 max-w-2xl text-lg text-primary-foreground/90 md:text-xl">
             {store.tagline}
           </p>
           <div className="hero-fade-3 mt-10 flex flex-wrap justify-center gap-3">

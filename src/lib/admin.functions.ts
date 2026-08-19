@@ -82,6 +82,28 @@ export const adminSessaoAtiva = createServerFn({ method: "POST" }).handler(async
 export const adminListOrders = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const admin = await exigirSessao();
+
+    // Confirmação por PIX/cartão depende do webhook do Mercado Pago ou de o
+    // cliente reabrir a página pública do pedido -- nenhum dos dois acontece
+    // se ele pagou e simplesmente fechou a aba. Sem isto, um pedido pago
+    // ficava "pendente" no painel até alguém visitar /pedido/<token> de novo.
+    // reconciliarPagamentoDoPedido já tem seu próprio limite de 10s por
+    // pagamento, então chamar aqui a cada carregamento do painel é seguro.
+    const { data: pendentes } = await admin
+      .from("orders")
+      .select("public_token")
+      .eq("payment_status", "pendente")
+      .in("payment_method", ["pix", "cartao"])
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (pendentes && pendentes.length > 0) {
+      const { reconciliarPagamentoDoPedido } = await import("@/lib/payments/service.server");
+      await Promise.all(
+        pendentes.map((p) => reconciliarPagamentoDoPedido(p.public_token)),
+      );
+    }
+
     const { data: orders, error } = await admin
       .from("orders")
       .select("*")

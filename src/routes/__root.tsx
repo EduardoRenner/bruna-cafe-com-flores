@@ -96,9 +96,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname.startsWith("/admin");
+  const isLinks = pathname === "/links";
   return (
     <QueryClientProvider client={queryClient}>
-      {isAdmin ? (
+      {isAdmin || isLinks ? (
         <Outlet />
       ) : (
         <CartProvider>

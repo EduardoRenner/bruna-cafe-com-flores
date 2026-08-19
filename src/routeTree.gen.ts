@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as LinksRouteImport } from './routes/links'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
@@ -52,6 +53,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinksRoute = LinksRouteImport.update({
+  id: '/links',
+  path: '/links',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SobreRoute = SobreRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
+  '/links': typeof LinksRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
+  '/links': typeof LinksRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
+  '/links': typeof LinksRoute
   '/sobre': typeof SobreRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/contato'
+    | '/links'
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/contato'
+    | '/links'
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/contato'
+    | '/links'
     | '/sobre'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRoute
   ContatoRoute: typeof ContatoRoute
+  LinksRoute: typeof LinksRoute
   SobreRoute: typeof SobreRoute
   ConfirmarEntregaTokenRoute: typeof ConfirmarEntregaTokenRoute
   PedidoOrderNumberRoute: typeof PedidoOrderNumberRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/contato'
       fullPath: '/contato'
       preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/links': {
+      id: '/links'
+      path: '/links'
+      fullPath: '/links'
+      preLoaderRoute: typeof LinksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sobre': {
@@ -448,6 +468,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRoute,
   ContatoRoute: ContatoRoute,
+  LinksRoute: LinksRoute,
   SobreRoute: SobreRoute,
   ConfirmarEntregaTokenRoute: ConfirmarEntregaTokenRoute,
   PedidoOrderNumberRoute: PedidoOrderNumberRoute,

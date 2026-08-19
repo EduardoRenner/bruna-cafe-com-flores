@@ -84,14 +84,14 @@ function Home() {
       <section className="striped-soft rounded-3xl px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl">Três universos, uma experiência</h2>
+          <h2 className="mt-3 font-display text-4xl md:text-5xl">Onde sentimentos ganham forma</h2>
           <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
         </div>
         <div className="mt-14 grid gap-8 md:grid-cols-3">
           {[
-            { icon: Flower2, title: "Flores & Arranjos", text: "Buquês, arranjos e composições sob medida com flores da estação.", color: "text-rose-deep" },
-            { icon: Coffee, title: "Café & Box da Manhã", text: "Boxes surpresa entregues direto na porta de quem você ama.", color: "text-coffee" },
-            { icon: Gift, title: "Presentes Personalizados", text: "Cestas temáticas, chocolates finos e presentes únicos.", color: "text-leaf" },
+            { icon: Flower2, title: "Flores & Arranjos", text: "Buquês, arranjos e composições criados sob medida, com flores selecionadas para cada ocasião e sentimento.", color: "text-rose-deep" },
+            { icon: Coffee, title: "Café & Box da Manhã", text: "Experiências deliciosas preparadas com carinho para surpreender logo nas primeiras horas do dia.", color: "text-coffee" },
+            { icon: Gift, title: "Presentes & Experiências", text: "Boxes personalizados, chocolates, plantas, itens especiais e combinações pensadas para transformar cada presente em uma lembrança inesquecível.", color: "text-leaf" },
           ].map((item) => (
             <Card key={item.title} className="reveal border-none bg-card p-8 shadow-card-soft transition-transform hover:-translate-y-1 hover:shadow-elegant">
               <item.icon className={`h-10 w-10 ${item.color}`} />
@@ -100,6 +100,9 @@ function Home() {
             </Card>
           ))}
         </div>
+        <p className="reveal mx-auto mt-12 max-w-2xl text-center text-lg text-muted-foreground">
+          Tudo escolhido e preparado com carinho para você celebrar, surpreender e demonstrar o que sente.
+        </p>
       </section>
 
       {/* DESTAQUES */}
@@ -158,14 +161,20 @@ function Home() {
         </div>
         <div className="reveal flex flex-col justify-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">Nossa história</p>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl">Um cantinho especial em Maravilha</h2>
+          <h2 className="mt-3 font-display text-4xl md:text-5xl">Um propósito que floresceu em Maravilha</h2>
           <Flourish className="mt-4 h-7 w-44 text-rose-deep/70 flourish-sway" />
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            A Bruna Fernanda Strojake criou este espaço com um propósito simples: entregar afeto em forma de flor, café e presente.
-            Cada arranjo é pensado à mão para transformar um dia comum em um dia inesquecível.
+            A Bruna Café com Flores nasceu do desejo de transformar sentimentos em presentes e momentos em memórias.
+            Com experiência e paixão pelo universo das flores, criamos um espaço onde cada detalhe é pensado para
+            surpreender: das flores aos cafés, dos presentes personalizados às pequenas delicadezas que tornam uma
+            ocasião ainda mais especial.
+          </p>
+          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+            Aqui, acreditamos que presentear vai muito além de escolher um produto. É sobre conhecer quem recebe,
+            entender o momento e transformar carinho em algo que possa ser visto, sentido e lembrado.
           </p>
           <p className="mt-4 text-lg italic leading-relaxed text-foreground">
-            "Especialista em presentes únicos para momentos especiais."
+            "Mais do que flores, entregamos sentimentos."
           </p>
           <div className="mt-8">
             <Button asChild variant="outline" className="border-rose-deep text-rose-deep hover:bg-rose-deep hover:text-primary-foreground">

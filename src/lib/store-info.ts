@@ -1,6 +1,7 @@
 export const store = {
   name: "Bruna Café com Flores",
-  tagline: "Flores, café e presentes únicos para cada ocasião especial",
+  tagline: "Flores • Buquês • Arranjos • Presentes personalizados • Cestas de café da manhã • Plantas • Experiências especiais e detalhes para celebrar cada ocasião.",
+  motto: "Onde sentimentos ganham forma",
   address: "Av. Pres. Kennedy, 260 - Padre Antonio, Maravilha - SC, 89874-000",
   phone: "(49) 99810-5239",
   phoneDigits: "554998105239",

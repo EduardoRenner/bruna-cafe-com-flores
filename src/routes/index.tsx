@@ -19,9 +19,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Bruna Café com Flores — Floricultura e Café em Maravilha SC" },
-      { name: "description", content: "Transformamos momentos em memórias. Flores frescas, café da manhã na porta e presentes personalizados em Maravilha, SC." },
+      { name: "description", content: "Onde sentimentos ganham forma. Flores, buquês, arranjos, presentes personalizados e cestas de café da manhã em Maravilha, SC." },
       { property: "og:title", content: "Bruna Café com Flores — Floricultura e Café em Maravilha SC" },
-      { property: "og:description", content: "Transformamos momentos em memórias. Flores frescas, café da manhã na porta e presentes personalizados em Maravilha, SC." },
+      { property: "og:description", content: "Onde sentimentos ganham forma. Flores, buquês, arranjos, presentes personalizados e cestas de café da manhã em Maravilha, SC." },
     ],
   }),
   component: Home,
@@ -84,7 +84,10 @@ function Home() {
       <section className="striped-soft rounded-3xl px-6 py-14 shadow-card-soft md:px-10 md:py-16">
         <div className="reveal text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-deep">O que oferecemos</p>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl">Onde sentimentos ganham forma</h2>
+          {/* Não repetir o mote aqui: ele virou o título do hero, uma tela
+              acima, e a mesma frase duas vezes na mesma página enfraquece as
+              duas. Esta frase é da própria Bruna, do texto institucional. */}
+          <h2 className="mt-3 font-display text-4xl md:text-5xl">Mais do que flores, criamos experiências</h2>
           <Flourish className="mx-auto mt-5 h-9 w-56 text-rose-deep flourish-sway" />
         </div>
         <div className="mt-14 grid gap-8 md:grid-cols-3">
@@ -172,6 +175,9 @@ function Home() {
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
             Aqui, acreditamos que presentear vai muito além de escolher um produto. É sobre conhecer quem recebe,
             entender o momento e transformar carinho em algo que possa ser visto, sentido e lembrado.
+          </p>
+          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+            Em cada buquê, arranjo, box ou café da manhã, colocamos cuidado, criatividade e significado.
           </p>
           <p className="mt-4 text-lg italic leading-relaxed text-foreground">
             "Mais do que flores, entregamos sentimentos."
